@@ -9,6 +9,7 @@ import { loadFilesSync } from '@graphql-tools/load-files';
 import { mergeTypeDefs, mergeResolvers } from '@graphql-tools/merge';
 import { GraphQLSchema } from 'graphql';
 import path from 'path';
+import { getContextFunction } from './graphql/helpers/context';
 
 dotenvConfig();
 
@@ -30,7 +31,7 @@ const schema: GraphQLSchema = makeExecutableSchema({
 
 const apolloServer = new ApolloServer({
     schema: schema,
-    context: ({ req }) => ({ req }),
+    context: getContextFunction({}),
 });
 
 apolloServer.applyMiddleware({
