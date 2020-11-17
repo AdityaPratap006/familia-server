@@ -5,7 +5,7 @@
   "main": "src/server.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "watch": "tsc -w",
+    "watch": "rm -rf ./build/ && tsc -w",
     "build": "rm -rf ./build/ && tsc",
     "dev": "nodemon build/server.js",
     "start": "node build/server.js",
