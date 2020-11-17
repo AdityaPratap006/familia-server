@@ -1,0 +1,43 @@
+{
+  "name": "familia-server",
+  "version": "1.0.0",
+  "description": "The GraphQL API for familia web app",
+  "main": "src/server.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "watch": "tsc -w",
+    "build": "rm -rf ./build/ && tsc",
+    "dev": "nodemon build/server.js",
+    "start": "node build/server.js",
+    "postinstall": "yarn build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AdityaPratap006/familia-server.git"
+  },
+  "author": "Aditya Pratap",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/AdityaPratap006/familia-server/issues"
+  },
+  "homepage": "https://github.com/AdityaPratap006/familia-server#readme",
+  "devDependencies": {
+    "@types/dotenv": "^8.2.0",
+    "@types/express": "^4.17.9",
+    "@types/mongoose": "^5.10.0",
+    "@types/node": "^14.14.7",
+    "nodemon": "^2.0.6",
+    "typescript": "^4.0.5"
+  },
+  "dependencies": {
+    "apollo-server-express": "^2.19.0",
+    "chalk": "^4.1.0",
+    "cors": "^2.8.5",
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
+    "graphql": "^15.4.0",
+    "graphql-scalars": "^1.4.1",
+    "graphql-tools": "^7.0.1",
+    "mongoose": "^5.10.15"
+  }
+}
