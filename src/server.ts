@@ -10,6 +10,7 @@ import { mergeTypeDefs, mergeResolvers } from '@graphql-tools/merge';
 import { GraphQLSchema } from 'graphql';
 import path from 'path';
 import { getContextFunction } from './graphql/helpers/context';
+import { connectToDatabase } from './utils/db';
 
 dotenvConfig();
 
@@ -43,12 +44,21 @@ apolloServer.applyMiddleware({
 
 const mainServer = http.createServer(app);
 
-const PORT = process.env.PORT;
+const startServer = async () => {
+    try {
+        await connectToDatabase();
 
-mainServer.listen(PORT, () => {
-    const localURL = `http://localhost:${PORT}`;
-    console.log(`\nServer is ready at ${chalk.blueBright(localURL)}`);
+        const PORT = process.env.PORT;
+        mainServer.listen(PORT, () => {
+            const localURL = `http://localhost:${PORT}`;
+            console.log(`Server is ready at ${chalk.blueBright(localURL)}`);
 
-    const graphqlURL = `${localURL}${apolloServer.graphqlPath}`;
-    console.log(`GraphQL Server is ready at ${chalk.magentaBright(graphqlURL)}`);
-});
+            const graphqlURL = `${localURL}${apolloServer.graphqlPath}`;
+            console.log(`GraphQL Server is ready at ${chalk.magentaBright(graphqlURL)}\n`);
+        });
+    } catch (error) {
+        console.log(chalk.red(`Could not start server: ${error.message}`));
+    }
+}
+
+startServer();
