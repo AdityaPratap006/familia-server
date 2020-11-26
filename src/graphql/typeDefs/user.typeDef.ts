@@ -10,11 +10,10 @@ const authType = gql`
 
     type User {
         _id: ID!
-        username: String
         email: String
         name: String
         about: String
-        images: [Image]
+        image: Image
         createdAt: DateTime
         updatedAt: DateTime
     }
@@ -23,18 +22,12 @@ const authType = gql`
         authToken: String!
     }
 
-    type CreateUserResponse {
-        name: String!
-        email: String!
-    }
-
     input ImageInput {
         url: String!
         public_id: String!
     }
 
     input UpdateUserInput {
-        username: String
         email: String
         name: String
         imageBase64String: String
@@ -42,8 +35,7 @@ const authType = gql`
     }
 
     type Mutation {
-        # createUser(input: AuthTokenInput!): CreateUserResponse!
-        createUser: CreateUserResponse!
+        createUser: User!
         updateUser(input: UpdateUserInput): User!
     }
 
