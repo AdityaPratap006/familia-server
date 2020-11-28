@@ -35,6 +35,10 @@ interface UserDoc extends mongoose.Document {
     auth_id: string;
 }
 
+export function instanceOfUserDoc(object: any): object is UserDoc {
+    return 'auth_id' in object;
+}
+
 const userSchema = new mongoose.Schema({
     email: {
         type: String,
