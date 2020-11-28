@@ -13,6 +13,7 @@ export interface UserAttributes {
     about?: string;
     fcmToken?: string;
     image?: UserProfilePic;
+    auth_id: string;
 }
 
 // An interface that describes the properties
@@ -31,13 +32,19 @@ interface UserDoc extends mongoose.Document {
     createdAt: string;
     updatedAt: string;
     fcmToken?: string;
+    auth_id: string;
 }
 
 const userSchema = new mongoose.Schema({
     email: {
         type: String,
-        required: true,
         index: true,
+        unique: true,
+    },
+    auth_id: {
+        type: String,
+        index: true,
+        required: true,
         unique: true,
     },
     name: {

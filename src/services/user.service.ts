@@ -6,6 +6,7 @@ interface NewUserInput {
     email: string;
     name: string;
     photoURL: string;
+    auth_id: string;
 }
 
 interface ProfileImageInput {
@@ -34,13 +35,14 @@ export default class UserService {
 
     static createNewUser = async (userData: NewUserInput) => {
         const newUser = User.build({
-            email: userData.email as string,
+            email: userData.email,
             name: userData.name,
             about: '',
             image: {
                 url: userData.photoURL,
                 public_id: '',
-            }
+            },
+            auth_id: userData.auth_id,
         });
 
         await newUser.save();

@@ -26,6 +26,7 @@ const createUser: IFieldResolver<any, ContextAttributes, createUserArgs, Promise
         name: userRecord.displayName as string,
         email: userRecord.email as string,
         photoURL: userRecord.photoURL as string,
+        auth_id: userRecord.uid,
     });
 
     return newUser;
