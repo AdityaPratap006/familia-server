@@ -28,6 +28,11 @@ export default class UserService {
         return users;
     }
 
+    static getOneUserByAuthId = async (authId: string) => {
+        const user = await User.findOne({ auth_id: authId });
+        return user;
+    }
+
     static getOneUserByEmail = async (userEmail: string) => {
         const user = await User.findOne({ email: userEmail });
         return user;
