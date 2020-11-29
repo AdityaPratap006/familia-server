@@ -1,6 +1,6 @@
 import { IFieldResolver, IResolvers } from 'graphql-tools';
 import { ApolloError, UserInputError } from 'apollo-server-express';
-import chalk from 'chalk';
+// import chalk from 'chalk';
 // import util from 'util';
 import { DateTimeResolver } from 'graphql-scalars';
 import { authCheck } from '../helpers/auth';
@@ -9,7 +9,6 @@ import { FamilyDoc } from '../../models/family.model';
 import FamilyService from '../../services/family.service';
 import UserService from '../../services/user.service';
 import { UserDoc } from '../../models/user.model';
-import MembershipService from '../../services/membership.service';
 
 interface newFamilyArgs {
     input: {
@@ -51,11 +50,6 @@ const createFamily: IFieldResolver<any, ContextAttributes, newFamilyArgs, Promis
             name,
             description,
             creator: createdByUser._id as string,
-        });
-
-        await MembershipService.createNewMembership({
-            family: createdFamily._id,
-            user: createdByUser._id,
         });
 
         return createdFamily;

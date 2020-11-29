@@ -1,6 +1,8 @@
 import chalk from 'chalk';
+import mongoose from 'mongoose';
 import { Family, FamilyAttributes, FamilyDoc } from '../models/family.model';
 import { UserDoc } from '../models/user.model';
+import { Membership } from '../models/membership.model';
 
 export default class FamilyService {
     static async getAllFamilies() {
@@ -9,17 +11,27 @@ export default class FamilyService {
     }
 
     static async createNewFamily(attrs: FamilyAttributes): Promise<FamilyDoc> {
-        const newFamily = Family.build({
-            ...attrs,
-        });
+        try {
+            const session = await mongoose.startSession();
+            session.startTransaction();
 
-        await newFamily.save();
-        const result = await newFamily.populate('creator').execPopulate();
+            const newFamily = Family.build({
+                ...attrs,
+            });
+            await newFamily.save({ session: session });
+            const familyResult = await newFamily.populate('creator').execPopulate();
+            const creator = familyResult.creator as UserDoc;
 
-        const creator = result.creator as UserDoc;
+            const newMembership = Membership.build({
+                user: creator._id,
+                family: familyResult._id,
+            });
+            await newMembership.save({ session: session });
 
-        console.log(chalk.blueBright(`${creator.name} created family '${newFamily.name}'`));
-
-        return result;
+            await session.commitTransaction();
+            return familyResult;
+        } catch (error) {
+            throw error;
+        }
     }
 }
