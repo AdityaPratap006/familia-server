@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import { Family, FamilyAttributes, FamilyDoc } from '../models/family.model';
 import { UserDoc } from '../models/user.model';
 import { Membership } from '../models/membership.model';
+import MembershipService from '../services/membership.service';
 
 export default class FamilyService {
     static async getAllFamilies() {
@@ -10,26 +11,38 @@ export default class FamilyService {
         return families;
     }
 
-    static async createNewFamily(attrs: FamilyAttributes): Promise<FamilyDoc> {
+    private static async createNewFamily(attrs: FamilyAttributes, session?: mongoose.ClientSession): Promise<FamilyDoc> {
         try {
-            const session = await mongoose.startSession();
-            session.startTransaction();
-
             const newFamily = Family.build({
                 ...attrs,
             });
             await newFamily.save({ session: session });
             const familyResult = await newFamily.populate('creator').execPopulate();
-            const creator = familyResult.creator as UserDoc;
 
-            const newMembership = Membership.build({
+            const creator = familyResult.creator as UserDoc;
+            console.log(`${creator.name} created family '${familyResult.name}'`);
+
+            return familyResult;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    static async createFamilyAndAddMembership(attrs: FamilyAttributes): Promise<FamilyDoc> {
+        try {
+            const session = await mongoose.startSession();
+            session.startTransaction();
+
+            const createdFamily = await this.createNewFamily(attrs, session);
+            const creator = createdFamily.creator as UserDoc;
+
+            await MembershipService.createNewMembership({
                 user: creator._id,
-                family: familyResult._id,
-            });
-            await newMembership.save({ session: session });
+                family: createdFamily._id,
+            }, session);
 
             await session.commitTransaction();
-            return familyResult;
+            return createdFamily;
         } catch (error) {
             throw error;
         }

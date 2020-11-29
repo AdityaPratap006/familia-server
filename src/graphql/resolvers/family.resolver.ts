@@ -46,7 +46,7 @@ const createFamily: IFieldResolver<any, ContextAttributes, newFamilyArgs, Promis
 
     try {
         const { name, description } = args.input;
-        const createdFamily = await FamilyService.createNewFamily({
+        const createdFamily = await FamilyService.createFamilyAndAddMembership({
             name,
             description,
             creator: createdByUser._id as string,
