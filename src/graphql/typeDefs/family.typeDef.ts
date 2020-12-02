@@ -29,6 +29,7 @@ const familyTypeDef = gql`
 
     type Query {
         allFamilies: [Family]!
+        getFamiliesOfUser: [Family]!
     }
 `;
 

@@ -10,6 +10,22 @@ export default class MembershipService {
         return memberships;
     }
 
+    static async getMembershipsOfAUser(userId: string) {
+        const memberships = await Membership.find({ user: userId }).populate({
+            path: 'family',
+            populate: {
+                path: 'creator',
+            }
+        });
+
+        const families = memberships.map(membership => {
+            const family = membership.family as FamilyDoc;
+            return family;
+        });
+
+        return families;
+    }
+
     static async createNewMembership(attrs: MembershipAttributes, session?: mongoose.ClientSession): Promise<MembershipDoc> {
         const newMembership = Membership.build({
             ...attrs,
