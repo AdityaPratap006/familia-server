@@ -80,13 +80,15 @@ export default class UserService {
         //     }
         // }
 
-        // delete newUserData.imageBase64String;
+        delete newUserData.imageBase64String;
+
+        // const dataToBeUpdated = { ...newUserData };
 
         const updatedUser = await User.findOneAndUpdate({
             email: userEmail
         }, {
             ...newUserData,
-            images: profileImageData,
+            image: profileImageData,
         }, {
             new: true
         }).exec();
@@ -112,5 +114,21 @@ export default class UserService {
         } catch (error) {
             throw error;
         }
+    }
+
+    static setDefaultFamilyId = async (authId: string, familyId: string) => {
+        const updatedUser = await User.findOneAndUpdate({
+            auth_id: authId,
+        }, {
+            defaultFamilyId: familyId,
+        }, {
+            new: true,
+        }).exec();
+
+        if (!updatedUser) {
+            throw Error(`couldn't set default family`);
+        }
+
+        return updatedUser;
     }
 }

@@ -4,18 +4,19 @@ const authType = gql`
     scalar DateTime
 
     type Image {
-        url: String
-        public_id: String
+        url: String!
+        public_id: String!
     }
 
     type User {
         _id: ID!
-        email: String
-        name: String
-        about: String
-        image: Image
-        createdAt: DateTime
-        updatedAt: DateTime
+        email: String!
+        name: String!
+        about: String!
+        image: Image!
+        defaultFamilyId: String
+        createdAt: DateTime!
+        updatedAt: DateTime!
     }
 
     input AuthTokenInput {
@@ -34,9 +35,14 @@ const authType = gql`
         about: String
     }
 
+    input SetDefaultFamilyIdInput {
+        familyId: String!
+    }
+
     type Mutation {
         createUser: User!
         updateUser(input: UpdateUserInput): User!
+        setDefaultFamilyId(input: SetDefaultFamilyIdInput): User!
     }
 
     type Query {

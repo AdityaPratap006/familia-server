@@ -8,13 +8,19 @@ import { ContextAttributes } from '../helpers/context';
 import UserService from '../../services/user.service';
 import { UserDoc } from '../../models/user.model';
 
-interface createUserArgs {
+interface CreateUserArgs {
     input: {
         authToken: string;
     };
 }
 
-const createUser: IFieldResolver<any, ContextAttributes, createUserArgs, Promise<UserDoc>> = async (parent, args, context) => {
+interface SetDefaultFamilyIdArgs {
+    input: {
+        familyId: string;
+    };
+}
+
+const createUser: IFieldResolver<any, ContextAttributes, CreateUserArgs, Promise<UserDoc>> = async (source, args, context) => {
     const userRecord = await authCheck(context.req);
 
     try {
@@ -43,6 +49,19 @@ const createUser: IFieldResolver<any, ContextAttributes, createUserArgs, Promise
     }
 }
 
+const setDefaultFamilyId: IFieldResolver<any, ContextAttributes, SetDefaultFamilyIdArgs, Promise<UserDoc>> = async (source, args, context) => {
+    const userRecord = await authCheck(context.req);
+
+    try {
+        const updatedUser = await UserService.setDefaultFamilyId(userRecord.uid, args.input.familyId);
+        return updatedUser;
+    } catch (error) {
+        console.log(error);
+        throw new ApolloError(`something went wrong`);
+    }
+
+}
+
 const userResolverMap: IResolvers = {
     DateTime: DateTimeResolver,
     Query: {
@@ -50,6 +69,7 @@ const userResolverMap: IResolvers = {
     },
     Mutation: {
         createUser,
+        setDefaultFamilyId,
     }
 };
 
