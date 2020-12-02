@@ -20,6 +20,7 @@ interface FamilyModel extends mongoose.Model<FamilyDoc> {
 interface FamilyDoc extends mongoose.Document {
     name: string;
     description?: string;
+    memberCount: number;
     creator: string | UserDoc;
     createdAt: string;
     updatedAt: string;
@@ -39,6 +40,10 @@ const familySchema = new mongoose.Schema({
         index: true,
         ref: 'User',
     },
+    memberCount: {
+        type: Number,
+        default: 0,
+    }
 }, { timestamps: true });
 
 familySchema.statics.build = (attrs: FamilyAttributes) => {

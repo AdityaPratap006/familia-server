@@ -41,6 +41,9 @@ export default class FamilyService {
                 family: createdFamily._id,
             }, session);
 
+            createdFamily.memberCount += 1;
+            await createdFamily.save({ session: session });
+
             await session.commitTransaction();
             return createdFamily;
         } catch (error) {

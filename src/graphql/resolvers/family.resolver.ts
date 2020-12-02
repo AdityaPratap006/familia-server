@@ -54,6 +54,7 @@ const createFamily: IFieldResolver<any, ContextAttributes, newFamilyArgs, Promis
 
         return createdFamily;
     } catch (error) {
+        console.log(error);
         throw new ApolloError(`something went wrong`);
     }
 }

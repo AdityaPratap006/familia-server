@@ -7,9 +7,10 @@ const familyTypeDef = gql`
         _id: ID!
         name: String!
         description: String
-        creator: User
-        createdAt: DateTime
-        updatedAt: DateTime
+        creator: User!
+        memberCount: Int!
+        createdAt: DateTime!
+        updatedAt: DateTime!
     }
 
     input CreateFamilyInput {
