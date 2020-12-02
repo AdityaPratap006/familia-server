@@ -9,7 +9,6 @@ import { FamilyDoc } from '../../models/family.model';
 import FamilyService from '../../services/family.service';
 import UserService from '../../services/user.service';
 import { UserDoc } from '../../models/user.model';
-import MembershipService from '../../services/membership.service';
 
 interface newFamilyArgs {
     input: {
@@ -23,29 +22,6 @@ const allFamilies: IFieldResolver<any, ContextAttributes, any, Promise<FamilyDoc
         const families = await FamilyService.getAllFamilies();
         return families;
     } catch (error) {
-        throw new ApolloError(`something went wrong`);
-    }
-}
-
-const getFamiliesOfUser: IFieldResolver<any, ContextAttributes, any, Promise<FamilyDoc[]>> = async (source, args, context) => {
-    const userRecord = await authCheck(context.req);
-
-    let user: UserDoc | null;
-    try {
-        user = await UserService.getOneUserByAuthId(userRecord.uid);
-
-        if (!user) {
-            throw new UserInputError('User not found');
-        }
-    } catch (error) {
-        throw new ApolloError(`something went wrong`);
-    }
-
-    try {
-        const families = await MembershipService.getMembershipsOfAUser(user._id);
-        return families;
-    } catch (error) {
-        console.log(error);
         throw new ApolloError(`something went wrong`);
     }
 }
@@ -86,7 +62,6 @@ const familyResolverMap: IResolvers = {
     DateTime: DateTimeResolver,
     Query: {
         allFamilies,
-        getFamiliesOfUser,
     },
     Mutation: {
         createFamily,
