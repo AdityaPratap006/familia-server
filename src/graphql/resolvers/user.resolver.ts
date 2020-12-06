@@ -20,6 +20,22 @@ interface SetDefaultFamilyIdArgs {
     };
 }
 
+const profile: IFieldResolver<any, ContextAttributes, CreateUserArgs, Promise<UserDoc>> = async (source, args, context) => {
+    const userRecord = await authCheck(context.req);
+
+    try {
+        const existingUser = await UserService.getOneUserByAuthId(userRecord.uid);
+        if (existingUser) {
+            return existingUser;
+        } else {
+            throw Error();
+        }
+    } catch (error) {
+        console.log(error);
+        throw new ApolloError(`something went wrong`);
+    }
+}
+
 const createUser: IFieldResolver<any, ContextAttributes, CreateUserArgs, Promise<UserDoc>> = async (source, args, context) => {
     const userRecord = await authCheck(context.req);
 
@@ -49,27 +65,13 @@ const createUser: IFieldResolver<any, ContextAttributes, CreateUserArgs, Promise
     }
 }
 
-const setDefaultFamilyId: IFieldResolver<any, ContextAttributes, SetDefaultFamilyIdArgs, Promise<UserDoc>> = async (source, args, context) => {
-    const userRecord = await authCheck(context.req);
-
-    try {
-        const updatedUser = await UserService.setDefaultFamilyId(userRecord.uid, args.input.familyId);
-        return updatedUser;
-    } catch (error) {
-        console.log(error);
-        throw new ApolloError(`something went wrong`);
-    }
-
-}
-
 const userResolverMap: IResolvers = {
     DateTime: DateTimeResolver,
     Query: {
-
+        profile,
     },
     Mutation: {
         createUser,
-        setDefaultFamilyId,
     }
 };
 

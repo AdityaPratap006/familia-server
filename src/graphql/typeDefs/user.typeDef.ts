@@ -14,7 +14,6 @@ const authType = gql`
         name: String!
         about: String!
         image: Image!
-        defaultFamilyId: String
         createdAt: DateTime!
         updatedAt: DateTime!
     }

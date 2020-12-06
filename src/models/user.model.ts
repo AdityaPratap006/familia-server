@@ -33,7 +33,6 @@ interface UserDoc extends mongoose.Document {
     updatedAt: string;
     fcmToken?: string;
     auth_id: string;
-    defaultFamilyId?: string;
 }
 
 export function instanceOfUserDoc(object: any): object is UserDoc {
@@ -66,9 +65,6 @@ const userSchema = new mongoose.Schema({
         type: String,
     },
     fcmToken: {
-        type: String,
-    },
-    defaultFamilyId: {
         type: String,
     },
 }, { timestamps: true });

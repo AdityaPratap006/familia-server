@@ -115,20 +115,4 @@ export default class UserService {
             throw error;
         }
     }
-
-    static setDefaultFamilyId = async (authId: string, familyId: string) => {
-        const updatedUser = await User.findOneAndUpdate({
-            auth_id: authId,
-        }, {
-            defaultFamilyId: familyId,
-        }, {
-            new: true,
-        }).exec();
-
-        if (!updatedUser) {
-            throw Error(`couldn't set default family`);
-        }
-
-        return updatedUser;
-    }
 }
