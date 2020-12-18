@@ -38,6 +38,10 @@ const authType = gql`
         familyId: String!
     }
 
+    input SearchUsersInput {
+        query: String
+    }
+
     type Mutation {
         createUser: User!
         updateUser(input: UpdateUserInput): User!
@@ -47,6 +51,7 @@ const authType = gql`
     type Query {
         profile: User!
         allUsers: [User]!
+        searchUsers(input: SearchUsersInput!): [User]!
     }
 `;
 

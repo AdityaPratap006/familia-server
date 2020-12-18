@@ -69,6 +69,12 @@ const userSchema = new mongoose.Schema({
     },
 }, { timestamps: true });
 
+userSchema.index({
+    email: 'text',
+    name: 'text',
+    about: 'text',
+});
+
 userSchema.statics.build = (attrs: UserAttributes) => {
     return new User(attrs);
 };

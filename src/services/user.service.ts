@@ -115,4 +115,13 @@ export default class UserService {
             throw error;
         }
     }
+
+    static searchUsers = async (searchQuery: string) => {
+        try {
+            const results = await User.find({ $text: { $search: searchQuery } });
+            return results;
+        } catch (error) {
+            throw error;
+        }
+    }
 }

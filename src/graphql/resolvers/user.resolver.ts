@@ -14,9 +14,9 @@ interface CreateUserArgs {
     };
 }
 
-interface SetDefaultFamilyIdArgs {
+interface SearchUserArgs {
     input: {
-        familyId: string;
+        query: string;
     };
 }
 
@@ -65,10 +65,26 @@ const createUser: IFieldResolver<any, ContextAttributes, CreateUserArgs, Promise
     }
 }
 
+const searchUsers: IFieldResolver<any, ContextAttributes, SearchUserArgs, Promise<UserDoc[]>> = async (source, args, context) => {
+    const userRecord = await authCheck(context.req);
+
+    const { input: { query: searchQuery } } = args;
+
+    try {
+        const searchResults = await UserService.searchUsers(searchQuery);
+        return searchResults;
+    } catch (error) {
+        console.log(error);
+        throw new ApolloError(`something went wrong`);
+    }
+
+}
+
 const userResolverMap: IResolvers = {
     DateTime: DateTimeResolver,
     Query: {
         profile,
+        searchUsers,
     },
     Mutation: {
         createUser,
