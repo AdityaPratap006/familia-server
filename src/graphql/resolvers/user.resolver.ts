@@ -66,7 +66,7 @@ const createUser: IFieldResolver<any, ContextAttributes, CreateUserArgs, Promise
 }
 
 const searchUsers: IFieldResolver<any, ContextAttributes, SearchUserArgs, Promise<UserDoc[]>> = async (source, args, context) => {
-    const userRecord = await authCheck(context.req);
+    await authCheck(context.req);
 
     const { input: { query: searchQuery } } = args;
 
