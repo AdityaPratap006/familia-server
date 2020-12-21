@@ -11,6 +11,16 @@ export default class FamilyService {
         return families;
     }
 
+    static async getFamilyById(familyId: string) {
+        try {
+            const family = await Family.findById(familyId).populate('creator');
+            return family;
+        } catch (error) {
+            console.log(chalk.red(error));
+            throw error;
+        }
+    }
+
     private static async createNewFamily(attrs: FamilyAttributes, session?: mongoose.ClientSession): Promise<FamilyDoc> {
         try {
             const newFamily = Family.build({

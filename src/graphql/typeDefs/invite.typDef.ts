@@ -13,8 +13,7 @@ const inviteTypeDef = gql`
     }
 
     input CreateInviteInput {
-        familyId: String!
-        from: String!
+        family: String!
         to: String!
     }
 
@@ -24,6 +23,10 @@ const inviteTypeDef = gql`
 
     type Query {
         getAllInvites: [Invite]!
+    }
+
+    type Mutation {
+        createInvite(input: CreateInviteInput!): Invite!
     }
 `;
 

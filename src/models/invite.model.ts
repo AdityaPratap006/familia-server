@@ -47,6 +47,12 @@ const InviteSchema = new mongoose.Schema({
     },
 }, { timestamps: true });
 
+InviteSchema.index({
+    family: 1,
+    from: 1,
+    to: 1,
+}, { unique: true });
+
 InviteSchema.statics.build = (attrs: InviteAttributes) => {
     return new Invite(attrs);
 };
