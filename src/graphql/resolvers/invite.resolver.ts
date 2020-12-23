@@ -5,10 +5,8 @@ import { ApolloError, UserInputError, ForbiddenError } from 'apollo-server-expre
 import { DateTimeResolver } from 'graphql-scalars';
 import { authCheck } from '../helpers/auth';
 import { ContextAttributes } from '../helpers/context';
-import { FamilyDoc } from '../../models/family.model';
 import UserService from '../../services/user.service';
 import { UserDoc } from '../../models/user.model';
-import MembershipService from '../../services/membership.service';
 import { InviteDoc } from '../../models/invite.model';
 import InviteService from '../../services/invite.service';
 import FamilyService from '../../services/family.service';
@@ -102,10 +100,35 @@ const createInvite: IFieldResolver<any, ContextAttributes, CreateInviteArgs, Pro
     }
 }
 
+const getInvitesReceivedByUser: IFieldResolver<any, ContextAttributes, any, Promise<InviteDoc[]>> = async (source, args, context) => {
+    const userAuthRecord = await authCheck(context.req);
+
+    let receivingUser: UserDoc;
+    try {
+        const user = await UserService.getOneUserByAuthId(userAuthRecord.uid);
+
+        if (!user) {
+            throw Error('user not found');
+        }
+
+        receivingUser = user;
+    } catch (error) {
+        throw new UserInputError(`user not found`);
+    }
+
+    try {
+        const invites = await InviteService.getInvitesToAUser(receivingUser.id);
+        return invites;
+    } catch (error) {
+        throw new ApolloError('something went wrong');
+    }
+}
+
 const inviteResolverMap: IResolvers = {
     DateTime: DateTimeResolver,
     Query: {
         getAllInvites,
+        getInvitesReceivedByUser,
     },
     Mutation: {
         createInvite,

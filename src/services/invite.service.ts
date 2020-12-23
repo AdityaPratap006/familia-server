@@ -37,4 +37,31 @@ export default class InviteService {
             throw error;
         }
     }
+
+    static async getInvitesToAUser(toUserId: string) {
+        try {
+            const invites = await Invite.find({ to: toUserId }).populate('family').populate('from').populate('to');
+            return invites;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    static async getInvitesfromAUser(fromUserId: string) {
+        try {
+            const invites = await Invite.find({ to: fromUserId }).populate('family').populate('from').populate('to');
+            return invites;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    static async getInvitesfromAUserForAFamily(fromUserId: string, familyId: string) {
+        try {
+            const invites = await Invite.find({ to: fromUserId, family: familyId }).populate('family').populate('from').populate('to');
+            return invites;
+        } catch (error) {
+            throw error;
+        }
+    }
 }

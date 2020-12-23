@@ -23,6 +23,7 @@ const inviteTypeDef = gql`
 
     type Query {
         getAllInvites: [Invite]!
+        getInvitesReceivedByUser: [Invite]!
     }
 
     type Mutation {
