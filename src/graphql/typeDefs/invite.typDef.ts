@@ -17,13 +17,15 @@ const inviteTypeDef = gql`
         to: String!
     }
 
-    input GetInviteInput {
+    input GetInvitesSentForFamilyInput {
         familyId: String!
     }
 
     type Query {
         getAllInvites: [Invite]!
         getInvitesReceivedByUser: [Invite]!
+        getInvitesSentByUser: [Invite]!
+        getInvitesSentForAFamily(input: GetInvitesSentForFamilyInput!): [Invite]!
     }
 
     type Mutation {

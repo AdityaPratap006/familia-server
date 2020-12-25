@@ -124,11 +124,36 @@ const getInvitesReceivedByUser: IFieldResolver<any, ContextAttributes, any, Prom
     }
 }
 
+const getInvitesSentByUser: IFieldResolver<any, ContextAttributes, any, Promise<InviteDoc[]>> = async (source, args, context) => {
+    const userAuthRecord = await authCheck(context.req);
+
+    let sendingUser: UserDoc;
+    try {
+        const user = await UserService.getOneUserByAuthId(userAuthRecord.uid);
+
+        if (!user) {
+            throw Error('user not found');
+        }
+
+        sendingUser = user;
+    } catch (error) {
+        throw new UserInputError(`user not found`);
+    }
+
+    try {
+        const invites = await InviteService.getInvitesfromAUser(sendingUser.id);
+        return invites;
+    } catch (error) {
+        throw new ApolloError('something went wrong');
+    }
+}
+
 const inviteResolverMap: IResolvers = {
     DateTime: DateTimeResolver,
     Query: {
         getAllInvites,
         getInvitesReceivedByUser,
+        getInvitesSentByUser,
     },
     Mutation: {
         createInvite,

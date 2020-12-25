@@ -49,7 +49,7 @@ export default class InviteService {
 
     static async getInvitesfromAUser(fromUserId: string) {
         try {
-            const invites = await Invite.find({ to: fromUserId }).populate('family').populate('from').populate('to');
+            const invites = await Invite.find({ from: fromUserId }).populate('family').populate('from').populate('to');
             return invites;
         } catch (error) {
             throw error;
@@ -58,7 +58,7 @@ export default class InviteService {
 
     static async getInvitesfromAUserForAFamily(fromUserId: string, familyId: string) {
         try {
-            const invites = await Invite.find({ to: fromUserId, family: familyId }).populate('family').populate('from').populate('to');
+            const invites = await Invite.find({ from: fromUserId, family: familyId }).populate('family').populate('from').populate('to');
             return invites;
         } catch (error) {
             throw error;
