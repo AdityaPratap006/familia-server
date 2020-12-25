@@ -15,6 +15,15 @@ export default class InviteService {
         }
     }
 
+    static async getInvite(id: string) {
+        try {
+            const invite = await Invite.findById(id).populate('family').populate('from').populate('to');
+            return invite;
+        } catch (error) {
+            throw error;
+        }
+    }
+
     static async createInvite(attrs: InviteAttributes) {
         try {
             const newInvite = Invite.build({ ...attrs });
@@ -60,6 +69,14 @@ export default class InviteService {
         try {
             const invites = await Invite.find({ from: fromUserId, family: familyId }).populate('family').populate('from').populate('to');
             return invites;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    static async deleteInvite(inviteId: string) {
+        try {
+            await Invite.findByIdAndDelete(inviteId);
         } catch (error) {
             throw error;
         }

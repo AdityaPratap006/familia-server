@@ -18,6 +18,12 @@ interface CreateInviteArgs {
     };
 }
 
+interface DeleteInviteArgs {
+    input: {
+        inviteId: string;
+    };
+}
+
 const getAllInvites: IFieldResolver<any, ContextAttributes, any, Promise<InviteDoc[]>> = async (source, args, context) => {
     await authCheck(context.req);
 
@@ -148,6 +154,50 @@ const getInvitesSentByUser: IFieldResolver<any, ContextAttributes, any, Promise<
     }
 }
 
+const deleteInvite: IFieldResolver<any, ContextAttributes, DeleteInviteArgs, Promise<string>> = async (source, args, context) => {
+    const userAuthRecord = await authCheck(context.req);
+
+    let requestingUser: UserDoc;
+    try {
+        const user = await UserService.getOneUserByAuthId(userAuthRecord.uid);
+
+        if (!user) {
+            throw Error('user not found');
+        }
+
+        requestingUser = user;
+    } catch (error) {
+        throw new UserInputError(`user not found`);
+    }
+
+    const cannotDeleteInviteErrorMsg = `you cannot delete this invite`;
+    try {
+        const invite = await InviteService.getInvite(args.input.inviteId);
+        if (!invite) {
+            throw Error('not found');
+        }
+
+        const fromUser = invite.from as UserDoc;
+
+        if (fromUser.id !== requestingUser.id) {
+            throw Error(cannotDeleteInviteErrorMsg);
+        }
+
+    } catch (error) {
+        if (error.message === cannotDeleteInviteErrorMsg) {
+            throw new ForbiddenError(cannotDeleteInviteErrorMsg);
+        }
+        throw new UserInputError(`invite not found`);
+    }
+
+    try {
+        await InviteService.deleteInvite(args.input.inviteId);
+        return `invite deleted`;
+    } catch (error) {
+        throw new ApolloError(`something went wrong`);
+    }
+}
+
 const inviteResolverMap: IResolvers = {
     DateTime: DateTimeResolver,
     Query: {
@@ -157,6 +207,7 @@ const inviteResolverMap: IResolvers = {
     },
     Mutation: {
         createInvite,
+        deleteInvite,
     },
 };
 

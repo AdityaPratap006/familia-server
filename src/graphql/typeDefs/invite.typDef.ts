@@ -21,6 +21,10 @@ const inviteTypeDef = gql`
         familyId: String!
     }
 
+    input DeleteInviteInput {
+        inviteId: String!
+    }
+
     type Query {
         getAllInvites: [Invite]!
         getInvitesReceivedByUser: [Invite]!
@@ -30,6 +34,7 @@ const inviteTypeDef = gql`
 
     type Mutation {
         createInvite(input: CreateInviteInput!): Invite!
+        deleteInvite(input: DeleteInviteInput!): String!
     }
 `;
 
