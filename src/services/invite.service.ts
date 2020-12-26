@@ -74,9 +74,40 @@ export default class InviteService {
         }
     }
 
-    static async deleteInvite(inviteId: string) {
+    static async deleteInvite(inviteId: string, session?: mongoose.ClientSession) {
         try {
-            await Invite.findByIdAndDelete(inviteId);
+            await Invite.findByIdAndDelete(inviteId, { session: session });
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    static async acceptInvite(inviteId: string) {
+        const inviteToBeAccepted = await this.getInvite(inviteId);
+
+        if (!inviteToBeAccepted) {
+            throw Error('invite not found');
+        }
+
+        const family = inviteToBeAccepted.family as FamilyDoc;
+        const memberToBeAdded = inviteToBeAccepted.to as UserDoc;
+
+        try {
+            const session = await mongoose.startSession();
+            session.startTransaction();
+
+            await MembershipService.createNewMembership({
+                family: family._id,
+                user: memberToBeAdded._id,
+            }, session);
+
+            family.memberCount += 1;
+            await family.save({ session: session });
+
+            await this.deleteInvite(inviteId, session);
+
+            await session.commitTransaction();
+            return;
         } catch (error) {
             throw error;
         }
