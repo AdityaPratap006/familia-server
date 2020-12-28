@@ -1,5 +1,5 @@
 import { IFieldResolver, IResolvers } from 'graphql-tools';
-import { ApolloError, UserInputError } from 'apollo-server-express';
+import { UserInputError } from 'apollo-server-express';
 // import chalk from 'chalk';
 // import util from 'util';
 import { DateTimeResolver } from 'graphql-scalars';
@@ -9,6 +9,7 @@ import { FamilyDoc } from '../../models/family.model';
 import FamilyService from '../../services/family.service';
 import UserService from '../../services/user.service';
 import { UserDoc } from '../../models/user.model';
+import { FamilyErrors, getGraphqlError, UserErrors } from '../../errors';
 
 interface newFamilyArgs {
     input: {
@@ -22,7 +23,7 @@ const allFamilies: IFieldResolver<any, ContextAttributes, any, Promise<FamilyDoc
         const families = await FamilyService.getAllFamilies();
         return families;
     } catch (error) {
-        throw new ApolloError(`something went wrong`);
+        throw getGraphqlError(error);
     }
 }
 
@@ -30,7 +31,7 @@ const createFamily: IFieldResolver<any, ContextAttributes, newFamilyArgs, Promis
     const userRecord = await authCheck(context.req);
 
     if (!args.input.name.trim()) {
-        throw new UserInputError('family name is required');
+        throw getGraphqlError(FamilyErrors.userInput.nameRequired);
     }
 
     let createdByUser: UserDoc | null;
@@ -38,10 +39,10 @@ const createFamily: IFieldResolver<any, ContextAttributes, newFamilyArgs, Promis
         createdByUser = await UserService.getOneUserByAuthId(userRecord.uid);
 
         if (!createdByUser) {
-            throw new UserInputError('User not found');
+            throw UserErrors.general.userNotFound;
         }
     } catch (error) {
-        throw new ApolloError(`something went wrong`);
+        throw getGraphqlError(error);
     }
 
     try {
@@ -55,7 +56,7 @@ const createFamily: IFieldResolver<any, ContextAttributes, newFamilyArgs, Promis
         return createdFamily;
     } catch (error) {
         console.log(error);
-        throw new ApolloError(`something went wrong`);
+        throw getGraphqlError(error);
     }
 }
 

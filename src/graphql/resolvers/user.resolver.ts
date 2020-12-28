@@ -7,6 +7,7 @@ import { authCheck } from '../helpers/auth';
 import { ContextAttributes } from '../helpers/context';
 import UserService from '../../services/user.service';
 import { UserDoc } from '../../models/user.model';
+import { getGraphqlError, UserErrors } from '../../errors';
 
 interface CreateUserArgs {
     input: {
@@ -28,16 +29,34 @@ const profile: IFieldResolver<any, ContextAttributes, CreateUserArgs, Promise<Us
         if (existingUser) {
             return existingUser;
         } else {
-            throw Error();
+            throw UserErrors.general.userNotFound;
         }
     } catch (error) {
         console.log(error);
-        throw new ApolloError(`something went wrong`);
+        throw getGraphqlError(error);
     }
 }
 
 const createUser: IFieldResolver<any, ContextAttributes, CreateUserArgs, Promise<UserDoc>> = async (source, args, context) => {
     const userRecord = await authCheck(context.req);
+
+    const { displayName, email, photoURL, uid } = userRecord;
+
+    if (!displayName) {
+        throw getGraphqlError(UserErrors.userInput.nameRequired);
+    }
+
+    if (!email) {
+        throw getGraphqlError(UserErrors.userInput.emailRequired);
+    }
+
+    if (!photoURL) {
+        throw getGraphqlError(UserErrors.userInput.photoURLRequired);
+    }
+
+    if (!uid) {
+        throw getGraphqlError(UserErrors.userInput.authIdRequired);
+    }
 
     try {
         const existingUser = await UserService.getOneUserByAuthId(userRecord.uid);
@@ -47,21 +66,21 @@ const createUser: IFieldResolver<any, ContextAttributes, CreateUserArgs, Promise
         }
     } catch (error) {
         console.log(error);
-        throw new ApolloError(`something went wrong`);
+        throw getGraphqlError(error);
     }
 
     try {
         const newUser = await UserService.createNewUser({
-            name: userRecord.displayName as string,
-            email: userRecord.email as string,
-            photoURL: userRecord.photoURL as string,
-            auth_id: userRecord.uid,
+            name: displayName,
+            email: email,
+            photoURL: photoURL,
+            auth_id: uid,
         });
 
         return newUser;
     } catch (error) {
         console.log(error);
-        throw new ApolloError(`something went wrong`);
+        throw getGraphqlError(error);
     }
 }
 
@@ -75,7 +94,7 @@ const searchUsers: IFieldResolver<any, ContextAttributes, SearchUserArgs, Promis
         return searchResults;
     } catch (error) {
         console.log(error);
-        throw new ApolloError(`something went wrong`);
+        throw getGraphqlError(error);
     }
 
 }

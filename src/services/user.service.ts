@@ -1,5 +1,6 @@
 import chalk from 'chalk';
 import { User } from '../models/user.model';
+import { internalServerError } from '../errors';
 // import { cloudinary } from '../utils/cloudinary';
 
 interface NewUserInput {
@@ -24,76 +25,96 @@ interface UpdateUserInput {
 export default class UserService {
 
     static getAllUsers = async () => {
-        const users = await User.find();
-        return users;
+        try {
+            const users = await User.find();
+            return users;
+        } catch (error) {
+            throw internalServerError;
+        }
     }
 
     static getOneUserByAuthId = async (authId: string) => {
-        const user = await User.findOne({ auth_id: authId });
-        return user;
+        try {
+            const user = await User.findOne({ auth_id: authId });
+            return user;
+        } catch (error) {
+            throw internalServerError;
+        }
     }
 
     static getOneUserByEmail = async (userEmail: string) => {
-        const user = await User.findOne({ email: userEmail });
-        return user;
+        try {
+            const user = await User.findOne({ email: userEmail });
+            return user;
+        } catch (error) {
+            throw internalServerError;
+        }
     }
 
     static createNewUser = async (userData: NewUserInput) => {
-        const newUser = User.build({
-            email: userData.email,
-            name: userData.name,
-            about: '',
-            image: {
-                url: userData.photoURL,
-                public_id: '',
-            },
-            auth_id: userData.auth_id,
-        });
+        try {
+            const newUser = User.build({
+                email: userData.email,
+                name: userData.name,
+                about: '',
+                image: {
+                    url: userData.photoURL,
+                    public_id: '',
+                },
+                auth_id: userData.auth_id,
+            });
 
-        await newUser.save();
-        console.log(chalk.green('created new user'));
+            await newUser.save();
+            console.log(chalk.green('created new user'));
 
-        return newUser;
+            return newUser;
+        } catch (error) {
+            throw internalServerError;
+        }
     }
 
     static getAndUpdateOneUser = async (userEmail: string, newUserData: UpdateUserInput) => {
+        try {
 
-        let profileImageData: ProfileImageInput = {
-            public_id: '',
-            url: '',
+            let profileImageData: ProfileImageInput = {
+                public_id: '',
+                url: '',
+            }
+
+            // if (newUserData.imageBase64String) {
+            //     try {
+            //         const result = await cloudinary.uploader.upload(newUserData.imageBase64String, {
+            //             public_id: `${Date.now()}`,
+            //             upload_preset: `social_app_graphql_profile_pics`,
+            //         });
+
+            //         profileImageData = {
+            //             public_id: result.public_id,
+            //             url: result.url,
+            //         };
+
+            //     } catch (error) {
+            //         throw Error(`error uploading image`);
+            //     }
+            // }
+
+            delete newUserData.imageBase64String;
+
+            // const dataToBeUpdated = { ...newUserData };
+
+            const updatedUser = await User.findOneAndUpdate({
+                email: userEmail
+            }, {
+                ...newUserData,
+                image: profileImageData,
+            }, {
+                new: true
+            }).exec();
+
+            return updatedUser;
+        } catch (error) {
+            throw internalServerError;
         }
-
-        // if (newUserData.imageBase64String) {
-        //     try {
-        //         const result = await cloudinary.uploader.upload(newUserData.imageBase64String, {
-        //             public_id: `${Date.now()}`,
-        //             upload_preset: `social_app_graphql_profile_pics`,
-        //         });
-
-        //         profileImageData = {
-        //             public_id: result.public_id,
-        //             url: result.url,
-        //         };
-
-        //     } catch (error) {
-        //         throw Error(`error uploading image`);
-        //     }
-        // }
-
-        delete newUserData.imageBase64String;
-
-        // const dataToBeUpdated = { ...newUserData };
-
-        const updatedUser = await User.findOneAndUpdate({
-            email: userEmail
-        }, {
-            ...newUserData,
-            image: profileImageData,
-        }, {
-            new: true
-        }).exec();
-
-        return updatedUser;
     }
 
     static saveFcmTokenForUser = async (userEmail: string, fcmToken: string) => {
@@ -106,13 +127,9 @@ export default class UserService {
                 new: true
             }).exec();
 
-            if (!updatedUser) {
-                throw Error(`Token Not Saved: User with email ${userEmail} not found!`);
-            }
-
             return updatedUser;
         } catch (error) {
-            throw error;
+            throw internalServerError;
         }
     }
 
@@ -121,7 +138,7 @@ export default class UserService {
             const results = await User.find({ $text: { $search: searchQuery } });
             return results;
         } catch (error) {
-            throw error;
+            throw internalServerError;
         }
     }
 }

@@ -2,13 +2,17 @@ import chalk from 'chalk';
 import mongoose from 'mongoose';
 import { Family, FamilyAttributes, FamilyDoc } from '../models/family.model';
 import { UserDoc } from '../models/user.model';
-import { Membership } from '../models/membership.model';
 import MembershipService from '../services/membership.service';
+import { internalServerError } from '../errors';
 
 export default class FamilyService {
     static async getAllFamilies() {
-        const families = await Family.find().populate('creator');
-        return families;
+        try {
+            const families = await Family.find().populate('creator');
+            return families;
+        } catch (error) {
+            throw internalServerError;
+        }
     }
 
     static async getFamilyById(familyId: string) {
@@ -17,7 +21,7 @@ export default class FamilyService {
             return family;
         } catch (error) {
             console.log(chalk.red(error));
-            throw error;
+            throw internalServerError;
         }
     }
 
@@ -34,7 +38,7 @@ export default class FamilyService {
 
             return familyResult;
         } catch (error) {
-            throw error;
+            throw internalServerError;
         }
     }
 
@@ -57,7 +61,7 @@ export default class FamilyService {
             await session.commitTransaction();
             return createdFamily;
         } catch (error) {
-            throw error;
+            throw internalServerError;
         }
     }
 }
