@@ -9,7 +9,12 @@ const userInput = {
     nameRequired: new CustomError(CustomErrorCodes.STATUS_400_BAD_INPUT, `family name is required`),
 }
 
+const forbidden = {
+    cannotAddMoreMembers: new CustomError(CustomErrorCodes.STATUS_403_FORBIDDEN, `cannot add more than 12 members`),
+}
+
 export const FamilyErrors = {
     general,
     userInput,
+    forbidden,
 }

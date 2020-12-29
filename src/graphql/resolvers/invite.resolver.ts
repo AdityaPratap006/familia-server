@@ -1,5 +1,4 @@
 import { IFieldResolver, IResolvers } from 'graphql-tools';
-import { ApolloError, UserInputError, ForbiddenError } from 'apollo-server-express';
 // import chalk from 'chalk';
 // import util from 'util';
 import { DateTimeResolver } from 'graphql-scalars';
@@ -12,6 +11,7 @@ import InviteService from '../../services/invite.service';
 import FamilyService from '../../services/family.service';
 import MembershipService from '../../services/membership.service';
 import { FamilyDoc } from '../../models/family.model';
+import { FamilyErrors, getGraphqlError, InviteErrors, UserErrors } from '../../errors';
 
 interface CreateInviteArgs {
     input: {
@@ -20,13 +20,7 @@ interface CreateInviteArgs {
     };
 }
 
-interface DeleteInviteArgs {
-    input: {
-        inviteId: string;
-    };
-}
-
-interface AcceptInviteArgs {
+interface FindInviteArgs {
     input: {
         inviteId: string;
     };
@@ -39,7 +33,7 @@ const getAllInvites: IFieldResolver<any, ContextAttributes, any, Promise<InviteD
         const invites = await InviteService.getAllInvites();
         return invites;
     } catch (error) {
-        throw new ApolloError(`something went wrong`);
+        throw getGraphqlError(error);
     }
 }
 
@@ -47,57 +41,36 @@ const createInvite: IFieldResolver<any, ContextAttributes, CreateInviteArgs, Pro
     const userAuthRecord = await authCheck(context.req);
 
     let fromUser: UserDoc;
-    const generalErrorMsg = `something went wrong`;
-    const userNotFoundErrorMsg = `user not found`;
     try {
         const user = await UserService.getOneUserByAuthId(userAuthRecord.uid);
         if (!user) {
-            throw Error(userNotFoundErrorMsg);
+            throw UserErrors.general.userNotFound;
         }
         fromUser = user;
     } catch (error) {
-        if (error.message === userNotFoundErrorMsg) {
-            throw new UserInputError(userNotFoundErrorMsg);
-        }
-
-        throw new ApolloError(generalErrorMsg);
+        throw getGraphqlError(error);
     }
 
     const { input: { family: familyId, to: toUserId } } = args;
-
-    const familyNotFoundErrorMsg = `family not found`;
-    const cannotInviteErrorMsg = `you cannot invite someone to this family`;
-    const cannotInviteSelfErrorMsg = `you cannot invite yourself`;
-
     try {
         const family = await FamilyService.getFamilyById(familyId);
 
         if (!family) {
-            throw Error(familyNotFoundErrorMsg);
+            throw FamilyErrors.general.familyNotFound;
         }
 
         const creator = family.creator as UserDoc;
 
         if (fromUser.id !== creator.id) {
-            throw Error(cannotInviteErrorMsg);
+            throw InviteErrors.forbidden.cannotInviteSomeone;
         }
 
         if (fromUser.id === toUserId) {
-            throw Error(cannotInviteSelfErrorMsg);
+            throw InviteErrors.forbidden.cannotInviteYourself;
         }
 
     } catch (error) {
-        const msg = error.message;
-
-        if (msg === familyNotFoundErrorMsg) {
-            throw new UserInputError(familyNotFoundErrorMsg);
-        } else if (msg === cannotInviteErrorMsg) {
-            throw new ForbiddenError(cannotInviteErrorMsg);
-        } else if (msg === cannotInviteSelfErrorMsg) {
-            throw new ForbiddenError(cannotInviteSelfErrorMsg);
-        }
-
-        throw new ApolloError(generalErrorMsg);
+        throw getGraphqlError(error);
     }
 
     try {
@@ -105,28 +78,20 @@ const createInvite: IFieldResolver<any, ContextAttributes, CreateInviteArgs, Pro
         const memberIdList = members.map(member => member.id);
         console.log(memberIdList);
         if (memberIdList.includes(toUserId)) {
-            throw Error('user is already a member');
+            throw InviteErrors.forbidden.userAlreadyAMember;
         }
     } catch (error) {
-        if (error.message === 'user is already a member') {
-            throw new ForbiddenError('user is already a member');
-        }
-
-        throw new ApolloError('something went wrong');
+        throw getGraphqlError(error);
     }
 
     try {
         const sentInvites = await InviteService.getInvitesfromAUserForAFamily(fromUser.id, familyId);
         const sentInvitesRecevingUserIdList = sentInvites.map(invite => (invite.to as UserDoc).id);
         if (sentInvitesRecevingUserIdList.includes(toUserId)) {
-            throw Error('invite already sent');
+            throw InviteErrors.forbidden.inviteAlreadySent;
         }
     } catch (error) {
-        if (error.message === 'invite already sent') {
-            throw new ForbiddenError('invite already sent');
-        }
-
-        throw new ApolloError('something went wrong');
+        throw getGraphqlError(error);
     }
 
     try {
@@ -139,7 +104,7 @@ const createInvite: IFieldResolver<any, ContextAttributes, CreateInviteArgs, Pro
         return invite;
     } catch (error) {
         // console.log(error);
-        throw new ApolloError(`something went wrong`);
+        throw getGraphqlError(error);
     }
 }
 
@@ -151,19 +116,19 @@ const getInvitesReceivedByUser: IFieldResolver<any, ContextAttributes, any, Prom
         const user = await UserService.getOneUserByAuthId(userAuthRecord.uid);
 
         if (!user) {
-            throw Error('user not found');
+            throw UserErrors.general.userNotFound;
         }
 
         receivingUser = user;
     } catch (error) {
-        throw new UserInputError(`user not found`);
+        throw getGraphqlError(error);
     }
 
     try {
         const invites = await InviteService.getInvitesToAUser(receivingUser.id);
         return invites;
     } catch (error) {
-        throw new ApolloError('something went wrong');
+        throw getGraphqlError(error);
     }
 }
 
@@ -175,23 +140,23 @@ const getInvitesSentByUser: IFieldResolver<any, ContextAttributes, any, Promise<
         const user = await UserService.getOneUserByAuthId(userAuthRecord.uid);
 
         if (!user) {
-            throw Error('user not found');
+            throw UserErrors.general.userNotFound;
         }
 
         sendingUser = user;
     } catch (error) {
-        throw new UserInputError(`user not found`);
+        throw getGraphqlError(error);
     }
 
     try {
         const invites = await InviteService.getInvitesfromAUser(sendingUser.id);
         return invites;
     } catch (error) {
-        throw new ApolloError('something went wrong');
+        throw getGraphqlError(error);
     }
 }
 
-const deleteInvite: IFieldResolver<any, ContextAttributes, DeleteInviteArgs, Promise<string>> = async (source, args, context) => {
+const deleteInvite: IFieldResolver<any, ContextAttributes, FindInviteArgs, Promise<string>> = async (source, args, context) => {
     const userAuthRecord = await authCheck(context.req);
 
     let requestingUser: UserDoc;
@@ -199,43 +164,39 @@ const deleteInvite: IFieldResolver<any, ContextAttributes, DeleteInviteArgs, Pro
         const user = await UserService.getOneUserByAuthId(userAuthRecord.uid);
 
         if (!user) {
-            throw Error('user not found');
+            throw UserErrors.general.userNotFound;
         }
 
         requestingUser = user;
     } catch (error) {
-        throw new UserInputError(`user not found`);
+        throw getGraphqlError(error);
     }
 
-    const cannotDeleteInviteErrorMsg = `you cannot delete this invite`;
     try {
         const invite = await InviteService.getInvite(args.input.inviteId);
         if (!invite) {
-            throw Error('not found');
+            throw InviteErrors.general.inviteNotFound;
         }
 
         const fromUser = invite.from as UserDoc;
-
-        if (fromUser.id !== requestingUser.id) {
-            throw Error(cannotDeleteInviteErrorMsg);
+        const toUser = invite.to as UserDoc;
+        if ([fromUser.id, toUser.id].includes(requestingUser.id) === false) {
+            throw InviteErrors.forbidden.cannotDeleteInvite;
         }
 
     } catch (error) {
-        if (error.message === cannotDeleteInviteErrorMsg) {
-            throw new ForbiddenError(cannotDeleteInviteErrorMsg);
-        }
-        throw new UserInputError(`invite not found`);
+        throw getGraphqlError(error);
     }
 
     try {
         await InviteService.deleteInvite(args.input.inviteId);
         return `invite deleted`;
     } catch (error) {
-        throw new ApolloError(`something went wrong`);
+        throw getGraphqlError(error);
     }
 }
 
-const acceptInvite: IFieldResolver<any, ContextAttributes, AcceptInviteArgs, Promise<string>> = async (source, args, context) => {
+const acceptInvite: IFieldResolver<any, ContextAttributes, FindInviteArgs, Promise<string>> = async (source, args, context) => {
     await authCheck(context.req);
 
     const inviteNotFoundErrorMsg = `invite not found`;
@@ -244,7 +205,7 @@ const acceptInvite: IFieldResolver<any, ContextAttributes, AcceptInviteArgs, Pro
         const invite = await InviteService.getInvite(args.input.inviteId);
 
         if (!invite) {
-            throw Error(inviteNotFoundErrorMsg);
+            throw InviteErrors.general.inviteNotFound;
         }
 
         const recevingUser = invite.to as UserDoc;
@@ -255,34 +216,22 @@ const acceptInvite: IFieldResolver<any, ContextAttributes, AcceptInviteArgs, Pro
         const memberIdList = members.map(member => member.id);
 
         if (memberIdList.includes(recevingUser.id)) {
-            throw Error('user already a member');
+            throw InviteErrors.forbidden.userAlreadyAMember;
         }
 
         if (members.length === 12) {
-            throw Error('cannot add more than 12 members');
+            throw FamilyErrors.forbidden.cannotAddMoreMembers;
         }
 
     } catch (error) {
-        if (error.message === inviteNotFoundErrorMsg) {
-            throw new UserInputError(inviteNotFoundErrorMsg);
-        }
-
-        if (error.message === 'user already a member') {
-            throw new ForbiddenError('user already a member');
-        }
-
-        if (error.message === 'cannot add more than 12 members') {
-            throw new ForbiddenError('cannot add more than 12 members');
-        }
-
-        throw new ApolloError(`something went wrong`);
+        throw getGraphqlError(error);
     }
 
     try {
         await InviteService.acceptInvite(args.input.inviteId);
         return `invite accepted`;
     } catch (error) {
-        throw new ApolloError('something went wrong');
+        throw getGraphqlError(error);
     }
 }
 
