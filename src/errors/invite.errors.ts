@@ -7,7 +7,6 @@ const general = {
 const forbidden = {
     cannotInviteSomeone: new CustomError(CustomErrorCodes.STATUS_403_FORBIDDEN, `you cannot invite someone to this family`),
     cannotInviteYourself: new CustomError(CustomErrorCodes.STATUS_403_FORBIDDEN, `you cannot invite yourself`),
-    userAlreadyAMember: new CustomError(CustomErrorCodes.STATUS_403_FORBIDDEN, `user is already a member`),
     inviteAlreadySent: new CustomError(CustomErrorCodes.STATUS_403_FORBIDDEN, `invite already sent`),
     cannotDeleteInvite: new CustomError(CustomErrorCodes.STATUS_403_FORBIDDEN, `you cannot delete this invite`),
 }

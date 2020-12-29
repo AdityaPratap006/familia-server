@@ -3,7 +3,6 @@ import { UserDoc } from '../../models/user.model';
 import UserService from '../../services/user.service';
 import { UserErrors, getGraphqlError, FamilyErrors, InviteErrors } from '../../errors';
 import FamilyService from '../../services/family.service';
-import MembershipService from '../../services/membership.service';
 import InviteService from '../../services/invite.service';
 
 
@@ -42,19 +41,6 @@ const checkIfUserCanSendInvite = async (userAuthRecord: UserRecord, familyId: st
     }
 }
 
-const checkIfUserIsAlreadyAMember = async (familyId: string, toUserId: string) => {
-    try {
-        const members = await MembershipService.getMembersOfAFamily(familyId);
-        const memberIdList = members.map(member => member.id);
-        console.log(memberIdList);
-        if (memberIdList.includes(toUserId)) {
-            throw InviteErrors.forbidden.userAlreadyAMember;
-        }
-    } catch (error) {
-        throw getGraphqlError(error);
-    }
-}
-
 const checkIfInviteAlreadySent = async (familyId: string, fromUserId: string, toUserId: string) => {
     try {
         const sentInvites = await InviteService.getInvitesfromAUserForAFamily(fromUserId, familyId);
@@ -67,8 +53,39 @@ const checkIfInviteAlreadySent = async (familyId: string, fromUserId: string, to
     }
 }
 
+const checkIfUserCanDeleteInvite = async (inviteId: string, requestingUserId: string) => {
+    try {
+        const invite = await InviteService.getInvite(inviteId);
+        if (!invite) {
+            throw InviteErrors.general.inviteNotFound;
+        }
+
+        const fromUser = invite.from as UserDoc;
+        const toUser = invite.to as UserDoc;
+        if ([fromUser.id, toUser.id].includes(requestingUserId) === false) {
+            throw InviteErrors.forbidden.cannotDeleteInvite;
+        }
+
+    } catch (error) {
+        throw getGraphqlError(error);
+    }
+}
+
+const checkIfInviteExists = async (inviteId: string) => {
+    try {
+        const invite = await InviteService.getInvite(inviteId);
+        if (!invite) {
+            throw InviteErrors.general.inviteNotFound;
+        }
+        return invite;
+    } catch (error) {
+        throw getGraphqlError(error);
+    }
+}
+
 export const InviteValidators = {
+    checkIfInviteExists,
     checkIfInviteAlreadySent,
     checkIfUserCanSendInvite,
-    checkIfUserIsAlreadyAMember,
+    checkIfUserCanDeleteInvite,
 };

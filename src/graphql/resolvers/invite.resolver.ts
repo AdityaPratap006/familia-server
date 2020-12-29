@@ -8,10 +8,9 @@ import UserService from '../../services/user.service';
 import { UserDoc } from '../../models/user.model';
 import { InviteDoc } from '../../models/invite.model';
 import InviteService from '../../services/invite.service';
-import MembershipService from '../../services/membership.service';
 import { FamilyDoc } from '../../models/family.model';
-import { FamilyErrors, getGraphqlError, InviteErrors, UserErrors } from '../../errors';
-import { InviteValidators } from '../validators/invite.validator';
+import { getGraphqlError, UserErrors } from '../../errors';
+import { InviteValidators, MembershipValidators } from '../validators';
 
 interface CreateInviteArgs {
     input: {
@@ -44,7 +43,7 @@ const createInvite: IFieldResolver<any, ContextAttributes, CreateInviteArgs, Pro
 
     const fromUser = await InviteValidators.checkIfUserCanSendInvite(userAuthRecord, familyId, toUserId);
 
-    await InviteValidators.checkIfUserIsAlreadyAMember(familyId, toUserId);
+    await MembershipValidators.checkIfUserIsAlreadyAMember(familyId, toUserId);
 
     await InviteValidators.checkIfInviteAlreadySent(familyId, fromUser.id, toUserId);
 
@@ -115,34 +114,20 @@ const deleteInvite: IFieldResolver<any, ContextAttributes, FindInviteArgs, Promi
     let requestingUser: UserDoc;
     try {
         const user = await UserService.getOneUserByAuthId(userAuthRecord.uid);
-
         if (!user) {
             throw UserErrors.general.userNotFound;
         }
-
         requestingUser = user;
     } catch (error) {
         throw getGraphqlError(error);
     }
 
-    try {
-        const invite = await InviteService.getInvite(args.input.inviteId);
-        if (!invite) {
-            throw InviteErrors.general.inviteNotFound;
-        }
+    const { input: { inviteId } } = args;
 
-        const fromUser = invite.from as UserDoc;
-        const toUser = invite.to as UserDoc;
-        if ([fromUser.id, toUser.id].includes(requestingUser.id) === false) {
-            throw InviteErrors.forbidden.cannotDeleteInvite;
-        }
-
-    } catch (error) {
-        throw getGraphqlError(error);
-    }
+    await InviteValidators.checkIfUserCanDeleteInvite(inviteId, requestingUser.id);
 
     try {
-        await InviteService.deleteInvite(args.input.inviteId);
+        await InviteService.deleteInvite(inviteId);
         return `invite deleted`;
     } catch (error) {
         throw getGraphqlError(error);
@@ -152,34 +137,17 @@ const deleteInvite: IFieldResolver<any, ContextAttributes, FindInviteArgs, Promi
 const acceptInvite: IFieldResolver<any, ContextAttributes, FindInviteArgs, Promise<string>> = async (source, args, context) => {
     await authCheck(context.req);
 
-    try {
-        const invite = await InviteService.getInvite(args.input.inviteId);
+    const { input: { inviteId } } = args;
+    const invite = await InviteValidators.checkIfInviteExists(inviteId);
 
-        if (!invite) {
-            throw InviteErrors.general.inviteNotFound;
-        }
+    const recevingUser = invite.to as UserDoc;
+    const family = invite.family as FamilyDoc;
 
-        const recevingUser = invite.to as UserDoc;
-        const family = invite.family as FamilyDoc;
-
-        const members = await MembershipService.getMembersOfAFamily(family.id);
-
-        const memberIdList = members.map(member => member.id);
-
-        if (memberIdList.includes(recevingUser.id)) {
-            throw InviteErrors.forbidden.userAlreadyAMember;
-        }
-
-        if (members.length === 12) {
-            throw FamilyErrors.forbidden.cannotAddMoreMembers;
-        }
-
-    } catch (error) {
-        throw getGraphqlError(error);
-    }
+    await MembershipValidators.checkIfUserIsAlreadyAMember(family.id, recevingUser.id);
+    await MembershipValidators.checkIfSpaceLeftInFamily(family);
 
     try {
-        await InviteService.acceptInvite(args.input.inviteId);
+        await InviteService.acceptInvite(inviteId);
         return `invite accepted`;
     } catch (error) {
         throw getGraphqlError(error);
