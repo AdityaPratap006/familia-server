@@ -1,15 +1,12 @@
 import { IFieldResolver, IResolvers } from 'graphql-tools';
-import { ApolloError, UserInputError } from 'apollo-server-express';
-// import chalk from 'chalk';
-// import util from 'util';
 import { DateTimeResolver } from 'graphql-scalars';
 import { authCheck } from '../helpers/auth';
 import { ContextAttributes } from '../helpers/context';
 import { FamilyDoc } from '../../models/family.model';
-import UserService from '../../services/user.service';
 import { UserDoc } from '../../models/user.model';
 import MembershipService from '../../services/membership.service';
-import { getGraphqlError, UserErrors } from '../../errors';
+import { getGraphqlError } from '../../errors';
+import { UserValidators } from '../validators';
 
 interface GetMembersArgs {
     input: {
@@ -18,18 +15,8 @@ interface GetMembersArgs {
 }
 
 const getFamiliesOfUser: IFieldResolver<any, ContextAttributes, any, Promise<FamilyDoc[]>> = async (source, args, context) => {
-    const userRecord = await authCheck(context.req);
-
-    let user: UserDoc | null;
-    try {
-        user = await UserService.getOneUserByAuthId(userRecord.uid);
-
-        if (!user) {
-            throw UserErrors.general.userNotFound;
-        }
-    } catch (error) {
-        throw getGraphqlError(error);
-    }
+    const userAuthRecord = await authCheck(context.req);
+    const user = await UserValidators.checkIfUserExists(userAuthRecord);
 
     try {
         const families = await MembershipService.getMembershipsOfAUser(user._id);
@@ -42,7 +29,6 @@ const getFamiliesOfUser: IFieldResolver<any, ContextAttributes, any, Promise<Fam
 
 const getMembersOfAFamily: IFieldResolver<any, ContextAttributes, GetMembersArgs, Promise<UserDoc[]>> = async (source, args, context) => {
     await authCheck(context.req);
-
     const { input: { familyId } } = args;
 
     try {
