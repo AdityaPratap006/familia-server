@@ -39,7 +39,7 @@ export function instanceOfUserDoc(object: any): object is UserDoc {
     return 'auth_id' in object;
 }
 
-const userSchema = new mongoose.Schema({
+const UserSchema = new mongoose.Schema({
     email: {
         type: String,
         index: true,
@@ -69,16 +69,16 @@ const userSchema = new mongoose.Schema({
     },
 }, { timestamps: true });
 
-userSchema.index({
+UserSchema.index({
     email: 'text',
     name: 'text',
     about: 'text',
 });
 
-userSchema.statics.build = (attrs: UserAttributes) => {
+UserSchema.statics.build = (attrs: UserAttributes) => {
     return new User(attrs);
 };
 
-const User = mongoose.model<UserDoc, UserModel>('User', userSchema);
+const User = mongoose.model<UserDoc, UserModel>('User', UserSchema);
 
 export { User, UserDoc };

@@ -24,7 +24,7 @@ interface MembershipDoc extends mongoose.Document {
     updatedAt: string;
 }
 
-const membershipSchema = new mongoose.Schema({
+const MembershipSchema = new mongoose.Schema({
     family: {
         type: mongoose.Types.ObjectId,
         required: true,
@@ -39,10 +39,10 @@ const membershipSchema = new mongoose.Schema({
     },
 }, { timestamps: true });
 
-membershipSchema.statics.build = (attrs: MembershipAttributes) => {
+MembershipSchema.statics.build = (attrs: MembershipAttributes) => {
     return new Membership(attrs);
 };
 
-const Membership = mongoose.model<MembershipDoc, MembershipModel>('Membership', membershipSchema);
+const Membership = mongoose.model<MembershipDoc, MembershipModel>('Membership', MembershipSchema);
 
 export { Membership, MembershipDoc };

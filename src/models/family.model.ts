@@ -26,7 +26,7 @@ interface FamilyDoc extends mongoose.Document {
     updatedAt: string;
 }
 
-const familySchema = new mongoose.Schema({
+const FamilySchema = new mongoose.Schema({
     name: {
         type: String,
         required: true,
@@ -46,10 +46,10 @@ const familySchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
-familySchema.statics.build = (attrs: FamilyAttributes) => {
+FamilySchema.statics.build = (attrs: FamilyAttributes) => {
     return new Family(attrs);
 };
 
-const Family = mongoose.model<FamilyDoc, FamilyModel>('Family', familySchema);
+const Family = mongoose.model<FamilyDoc, FamilyModel>('Family', FamilySchema);
 
 export { Family, FamilyDoc };
