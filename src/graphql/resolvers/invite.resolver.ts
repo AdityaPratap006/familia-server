@@ -1,16 +1,13 @@
 import { IFieldResolver, IResolvers } from 'graphql-tools';
-// import chalk from 'chalk';
-// import util from 'util';
 import { DateTimeResolver } from 'graphql-scalars';
 import { authCheck } from '../helpers/auth';
 import { ContextAttributes } from '../helpers/context';
-import UserService from '../../services/user.service';
 import { UserDoc } from '../../models/user.model';
 import { InviteDoc } from '../../models/invite.model';
 import InviteService from '../../services/invite.service';
 import { FamilyDoc } from '../../models/family.model';
-import { getGraphqlError, UserErrors } from '../../errors';
-import { InviteValidators, MembershipValidators } from '../validators';
+import { getGraphqlError } from '../../errors';
+import { InviteValidators, MembershipValidators, UserValidators } from '../validators';
 
 interface CreateInviteArgs {
     input: {
@@ -37,14 +34,12 @@ const getAllInvites: IFieldResolver<any, ContextAttributes, any, Promise<InviteD
 }
 
 const createInvite: IFieldResolver<any, ContextAttributes, CreateInviteArgs, Promise<InviteDoc>> = async (source, args, context) => {
-    const userAuthRecord = await authCheck(context.req);
-
     const { input: { family: familyId, to: toUserId } } = args;
 
-    const fromUser = await InviteValidators.checkIfUserCanSendInvite(userAuthRecord, familyId, toUserId);
-
+    const userAuthRecord = await authCheck(context.req);
+    const fromUser = await UserValidators.checkIfUserExists(userAuthRecord);
+    await InviteValidators.checkIfUserCanSendInvite(familyId, fromUser.id, toUserId);
     await MembershipValidators.checkIfUserIsAlreadyAMember(familyId, toUserId);
-
     await InviteValidators.checkIfInviteAlreadySent(familyId, fromUser.id, toUserId);
 
     try {
@@ -62,19 +57,7 @@ const createInvite: IFieldResolver<any, ContextAttributes, CreateInviteArgs, Pro
 
 const getInvitesReceivedByUser: IFieldResolver<any, ContextAttributes, any, Promise<InviteDoc[]>> = async (source, args, context) => {
     const userAuthRecord = await authCheck(context.req);
-
-    let receivingUser: UserDoc;
-    try {
-        const user = await UserService.getOneUserByAuthId(userAuthRecord.uid);
-
-        if (!user) {
-            throw UserErrors.general.userNotFound;
-        }
-
-        receivingUser = user;
-    } catch (error) {
-        throw getGraphqlError(error);
-    }
+    const receivingUser = await UserValidators.checkIfUserExists(userAuthRecord);
 
     try {
         const invites = await InviteService.getInvitesToAUser(receivingUser.id);
@@ -86,19 +69,7 @@ const getInvitesReceivedByUser: IFieldResolver<any, ContextAttributes, any, Prom
 
 const getInvitesSentByUser: IFieldResolver<any, ContextAttributes, any, Promise<InviteDoc[]>> = async (source, args, context) => {
     const userAuthRecord = await authCheck(context.req);
-
-    let sendingUser: UserDoc;
-    try {
-        const user = await UserService.getOneUserByAuthId(userAuthRecord.uid);
-
-        if (!user) {
-            throw UserErrors.general.userNotFound;
-        }
-
-        sendingUser = user;
-    } catch (error) {
-        throw getGraphqlError(error);
-    }
+    const sendingUser = await UserValidators.checkIfUserExists(userAuthRecord);
 
     try {
         const invites = await InviteService.getInvitesfromAUser(sendingUser.id);
@@ -109,21 +80,10 @@ const getInvitesSentByUser: IFieldResolver<any, ContextAttributes, any, Promise<
 }
 
 const deleteInvite: IFieldResolver<any, ContextAttributes, FindInviteArgs, Promise<string>> = async (source, args, context) => {
-    const userAuthRecord = await authCheck(context.req);
-
-    let requestingUser: UserDoc;
-    try {
-        const user = await UserService.getOneUserByAuthId(userAuthRecord.uid);
-        if (!user) {
-            throw UserErrors.general.userNotFound;
-        }
-        requestingUser = user;
-    } catch (error) {
-        throw getGraphqlError(error);
-    }
-
     const { input: { inviteId } } = args;
 
+    const userAuthRecord = await authCheck(context.req);
+    const requestingUser = await UserValidators.checkIfUserExists(userAuthRecord);
     await InviteValidators.checkIfUserCanDeleteInvite(inviteId, requestingUser.id);
 
     try {

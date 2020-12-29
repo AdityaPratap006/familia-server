@@ -1,22 +1,11 @@
 import { UserRecord } from '../helpers/auth';
 import { UserDoc } from '../../models/user.model';
-import UserService from '../../services/user.service';
-import { UserErrors, getGraphqlError, FamilyErrors, InviteErrors } from '../../errors';
+import { getGraphqlError, FamilyErrors, InviteErrors } from '../../errors';
 import FamilyService from '../../services/family.service';
 import InviteService from '../../services/invite.service';
 
 
-const checkIfUserCanSendInvite = async (userAuthRecord: UserRecord, familyId: string, toUserId: string) => {
-    let fromUser: UserDoc;
-    try {
-        const user = await UserService.getOneUserByAuthId(userAuthRecord.uid);
-        if (!user) {
-            throw UserErrors.general.userNotFound;
-        }
-        fromUser = user;
-    } catch (error) {
-        throw getGraphqlError(error);
-    }
+const checkIfUserCanSendInvite = async (familyId: string, fromUserId: string, toUserId: string) => {
 
     try {
         const family = await FamilyService.getFamilyById(familyId);
@@ -27,15 +16,14 @@ const checkIfUserCanSendInvite = async (userAuthRecord: UserRecord, familyId: st
 
         const creator = family.creator as UserDoc;
 
-        if (fromUser.id !== creator.id) {
+        if (fromUserId !== creator.id) {
             throw InviteErrors.forbidden.cannotInviteSomeone;
         }
 
-        if (fromUser.id === toUserId) {
+        if (fromUserId === toUserId) {
             throw InviteErrors.forbidden.cannotInviteYourself;
         }
 
-        return fromUser;
     } catch (error) {
         throw getGraphqlError(error);
     }
