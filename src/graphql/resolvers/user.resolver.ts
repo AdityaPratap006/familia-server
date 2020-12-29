@@ -1,7 +1,5 @@
 import { IFieldResolver, IResolvers } from 'graphql-tools';
-import { ApolloError } from 'apollo-server-express';
 import chalk from 'chalk';
-// import util from 'util';
 import { DateTimeResolver } from 'graphql-scalars';
 import { authCheck } from '../helpers/auth';
 import { ContextAttributes } from '../helpers/context';
