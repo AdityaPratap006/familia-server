@@ -8,10 +8,10 @@ import UserService from '../../services/user.service';
 import { UserDoc } from '../../models/user.model';
 import { InviteDoc } from '../../models/invite.model';
 import InviteService from '../../services/invite.service';
-import FamilyService from '../../services/family.service';
 import MembershipService from '../../services/membership.service';
 import { FamilyDoc } from '../../models/family.model';
 import { FamilyErrors, getGraphqlError, InviteErrors, UserErrors } from '../../errors';
+import { InviteValidators } from '../validators/invite.validator';
 
 interface CreateInviteArgs {
     input: {
@@ -40,59 +40,13 @@ const getAllInvites: IFieldResolver<any, ContextAttributes, any, Promise<InviteD
 const createInvite: IFieldResolver<any, ContextAttributes, CreateInviteArgs, Promise<InviteDoc>> = async (source, args, context) => {
     const userAuthRecord = await authCheck(context.req);
 
-    let fromUser: UserDoc;
-    try {
-        const user = await UserService.getOneUserByAuthId(userAuthRecord.uid);
-        if (!user) {
-            throw UserErrors.general.userNotFound;
-        }
-        fromUser = user;
-    } catch (error) {
-        throw getGraphqlError(error);
-    }
-
     const { input: { family: familyId, to: toUserId } } = args;
-    try {
-        const family = await FamilyService.getFamilyById(familyId);
 
-        if (!family) {
-            throw FamilyErrors.general.familyNotFound;
-        }
+    const fromUser = await InviteValidators.checkIfUserCanSendInvite(userAuthRecord, familyId, toUserId);
 
-        const creator = family.creator as UserDoc;
+    await InviteValidators.checkIfUserIsAlreadyAMember(familyId, toUserId);
 
-        if (fromUser.id !== creator.id) {
-            throw InviteErrors.forbidden.cannotInviteSomeone;
-        }
-
-        if (fromUser.id === toUserId) {
-            throw InviteErrors.forbidden.cannotInviteYourself;
-        }
-
-    } catch (error) {
-        throw getGraphqlError(error);
-    }
-
-    try {
-        const members = await MembershipService.getMembersOfAFamily(familyId);
-        const memberIdList = members.map(member => member.id);
-        console.log(memberIdList);
-        if (memberIdList.includes(toUserId)) {
-            throw InviteErrors.forbidden.userAlreadyAMember;
-        }
-    } catch (error) {
-        throw getGraphqlError(error);
-    }
-
-    try {
-        const sentInvites = await InviteService.getInvitesfromAUserForAFamily(fromUser.id, familyId);
-        const sentInvitesRecevingUserIdList = sentInvites.map(invite => (invite.to as UserDoc).id);
-        if (sentInvitesRecevingUserIdList.includes(toUserId)) {
-            throw InviteErrors.forbidden.inviteAlreadySent;
-        }
-    } catch (error) {
-        throw getGraphqlError(error);
-    }
+    await InviteValidators.checkIfInviteAlreadySent(familyId, fromUser.id, toUserId);
 
     try {
         const invite = await InviteService.createInvite({
@@ -103,7 +57,6 @@ const createInvite: IFieldResolver<any, ContextAttributes, CreateInviteArgs, Pro
 
         return invite;
     } catch (error) {
-        // console.log(error);
         throw getGraphqlError(error);
     }
 }
@@ -198,8 +151,6 @@ const deleteInvite: IFieldResolver<any, ContextAttributes, FindInviteArgs, Promi
 
 const acceptInvite: IFieldResolver<any, ContextAttributes, FindInviteArgs, Promise<string>> = async (source, args, context) => {
     await authCheck(context.req);
-
-    const inviteNotFoundErrorMsg = `invite not found`;
 
     try {
         const invite = await InviteService.getInvite(args.input.inviteId);

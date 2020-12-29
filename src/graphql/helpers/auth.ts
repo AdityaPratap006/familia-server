@@ -36,3 +36,5 @@ export const authCheck = async (req: Request) => {
     const currentUser = await getVerifiedUser(authToken);
     return currentUser;
 }
+
+export type UserRecord = firebaseAdmin.auth.UserRecord;
