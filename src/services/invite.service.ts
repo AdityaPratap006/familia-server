@@ -1,9 +1,10 @@
 import chalk from 'chalk';
 import mongoose from 'mongoose';
-import { Invite, InviteAttributes, InviteDoc } from '../models/invite.model';
-import { Family, FamilyAttributes, FamilyDoc } from '../models/family.model';
+import { Invite, InviteAttributes } from '../models/invite.model';
+import { FamilyDoc } from '../models/family.model';
 import { UserDoc } from '../models/user.model';
 import MembershipService from '../services/membership.service';
+import { internalServerError, InviteErrors } from '../errors';
 
 export default class InviteService {
     static async getAllInvites() {
@@ -11,7 +12,7 @@ export default class InviteService {
             const invites = await Invite.find().populate('family').populate('from').populate('to');
             return invites;
         } catch (error) {
-            throw error;
+            throw internalServerError;
         }
     }
 
@@ -20,7 +21,7 @@ export default class InviteService {
             const invite = await Invite.findById(id).populate('family').populate('from').populate('to');
             return invite;
         } catch (error) {
-            throw error;
+            throw internalServerError;
         }
     }
 
@@ -43,7 +44,7 @@ export default class InviteService {
 
             return newInviteData;
         } catch (error) {
-            throw error;
+            throw internalServerError;
         }
     }
 
@@ -52,7 +53,7 @@ export default class InviteService {
             const invites = await Invite.find({ to: toUserId }).populate('family').populate('from').populate('to');
             return invites;
         } catch (error) {
-            throw error;
+            throw internalServerError;
         }
     }
 
@@ -61,7 +62,7 @@ export default class InviteService {
             const invites = await Invite.find({ from: fromUserId }).populate('family').populate('from').populate('to');
             return invites;
         } catch (error) {
-            throw error;
+            throw internalServerError;
         }
     }
 
@@ -70,7 +71,7 @@ export default class InviteService {
             const invites = await Invite.find({ from: fromUserId, family: familyId }).populate('family').populate('from').populate('to');
             return invites;
         } catch (error) {
-            throw error;
+            throw internalServerError;
         }
     }
 
@@ -78,7 +79,7 @@ export default class InviteService {
         try {
             await Invite.findByIdAndDelete(inviteId, { session: session });
         } catch (error) {
-            throw error;
+            throw internalServerError;
         }
     }
 
@@ -86,7 +87,7 @@ export default class InviteService {
         const inviteToBeAccepted = await this.getInvite(inviteId);
 
         if (!inviteToBeAccepted) {
-            throw Error('invite not found');
+            throw InviteErrors.general.inviteNotFound;
         }
 
         const family = inviteToBeAccepted.family as FamilyDoc;
@@ -109,7 +110,7 @@ export default class InviteService {
             await session.commitTransaction();
             return;
         } catch (error) {
-            throw error;
+            throw internalServerError;
         }
     }
 }
