@@ -41,6 +41,10 @@ const inviteTypeDef = gql`
         deleteInvite(input: DeleteInviteInput!): String!
         acceptInvite(input: AcceptInviteInput!): String!
     }
+
+    type Subscription {
+        inviteCreated: Invite
+    }
 `;
 
 export default inviteTypeDef;
