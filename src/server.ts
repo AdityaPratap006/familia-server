@@ -3,7 +3,7 @@ import http from 'http';
 import chalk from "chalk";
 import { config as dotenvConfig } from 'dotenv';
 import cors from 'cors';
-import { ApolloServer } from 'apollo-server-express';
+import { ApolloServer, PubSub } from 'apollo-server-express';
 import { makeExecutableSchema } from 'graphql-tools';
 import { loadFilesSync } from '@graphql-tools/load-files';
 import { mergeTypeDefs, mergeResolvers } from '@graphql-tools/merge';
@@ -13,6 +13,8 @@ import { getContextFunction } from './graphql/helpers/context';
 import { connectToDatabase } from './utils/db';
 
 dotenvConfig();
+
+const pubsub = new PubSub();
 
 const app: Express = express();
 
@@ -32,7 +34,9 @@ const schema: GraphQLSchema = makeExecutableSchema({
 
 const apolloServer = new ApolloServer({
     schema: schema,
-    context: getContextFunction({}),
+    context: getContextFunction({
+        pubsub,
+    }),
 });
 
 apolloServer.applyMiddleware({
@@ -44,6 +48,8 @@ apolloServer.applyMiddleware({
 
 const mainServer = http.createServer(app);
 
+apolloServer.installSubscriptionHandlers(mainServer);
+
 const startServer = async () => {
     try {
         await connectToDatabase();
@@ -54,7 +60,10 @@ const startServer = async () => {
             console.log(`Server is ready at ${chalk.blueBright(localURL)}`);
 
             const graphqlURL = `${localURL}${apolloServer.graphqlPath}`;
-            console.log(`GraphQL Server is ready at ${chalk.magentaBright(graphqlURL)}\n`);
+            console.log(`GraphQL Server is ready at ${chalk.magentaBright(graphqlURL)}`);
+
+            const subscriptionsURL = `${localURL}${apolloServer.subscriptionsPath}`;
+            console.log(`GraphQL Subscriptions are ready at ${chalk.cyan(subscriptionsURL)}\n`);
         });
     } catch (error) {
         console.log(chalk.red(`Could not start server: ${error.message}`));

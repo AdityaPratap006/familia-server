@@ -1,8 +1,8 @@
 import { Request } from 'express';
-// import { PubSubEngine } from 'apollo-server-express';
+import { PubSubEngine } from 'apollo-server-express';
 
 interface ContextExternalArgs {
-    // pubsub: PubSubEngine;
+    pubsub: PubSubEngine;
 }
 
 export interface ContextArgs {
@@ -11,11 +11,12 @@ export interface ContextArgs {
 
 export type ContextAttributes = ContextArgs & ContextExternalArgs;
 
-type ContextFunctionInner = (args: ContextArgs) => ContextAttributes;
+type ContextFunction = (args: ContextArgs) => ContextAttributes;
+type ContextFunctionWrapper = (args: ContextExternalArgs) => ContextFunction;
 
-export const getContextFunction = ({ /*pubsub*/ }: ContextExternalArgs): ContextFunctionInner => {
+export const getContextFunction: ContextFunctionWrapper = ({ pubsub }) => {
     return (args) => ({
         ...args,
-        //pubsub
+        pubsub,
     });
 };
