@@ -52,7 +52,7 @@ const createInvite: IFieldResolver<any, ContextAttributes, CreateInviteArgs, Pro
         });
 
         pubsub.publish(InviteEvents.INVITE_CREATED, {
-            inviteCreated: invite,
+            onInviteCreated: invite,
         });
 
         return invite;
@@ -87,13 +87,19 @@ const getInvitesSentByUser: IFieldResolver<any, ContextAttributes, any, Promise<
 
 const deleteInvite: IFieldResolver<any, ContextAttributes, FindInviteArgs, Promise<string>> = async (source, args, context) => {
     const { input: { inviteId } } = args;
+    const { req, pubsub } = context;
 
-    const userAuthRecord = await authCheck(context.req);
+    const userAuthRecord = await authCheck(req);
     const requestingUser = await UserValidators.checkIfUserExists(userAuthRecord);
     await InviteValidators.checkIfUserCanDeleteInvite(inviteId, requestingUser.id);
 
     try {
         await InviteService.deleteInvite(inviteId);
+
+        pubsub.publish(InviteEvents.INVITE_DELETED, {
+            onInviteDeleted: inviteId,
+        });
+
         return `invite deleted`;
     } catch (error) {
         throw getGraphqlError(error);
@@ -126,6 +132,12 @@ const inviteCreatedSubscription: IFieldResolver<any, ContextAttributes, any, Asy
     return pubsub.asyncIterator([InviteEvents.INVITE_CREATED]);
 }
 
+const inviteDeletedSubscription: IFieldResolver<any, ContextAttributes, any, AsyncIterator<InviteDoc>> = (source, args, context) => {
+    const { pubsub } = context;
+
+    return pubsub.asyncIterator([InviteEvents.INVITE_DELETED]);
+}
+
 const inviteResolverMap: IResolvers = {
     DateTime: DateTimeResolver,
     Query: {
@@ -139,8 +151,11 @@ const inviteResolverMap: IResolvers = {
         acceptInvite,
     },
     Subscription: {
-        inviteCreated: {
+        onInviteCreated: {
             subscribe: inviteCreatedSubscription,
+        },
+        onInviteDeleted: {
+            subscribe: inviteDeletedSubscription,
         }
     },
 };

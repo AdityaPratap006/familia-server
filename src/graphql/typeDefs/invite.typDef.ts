@@ -43,7 +43,8 @@ const inviteTypeDef = gql`
     }
 
     type Subscription {
-        inviteCreated: Invite
+        onInviteCreated: Invite
+        onInviteDeleted: String
     }
 `;
 
