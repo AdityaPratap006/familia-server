@@ -19,6 +19,15 @@ interface SearchUserArgs {
     };
 }
 
+interface UpdateUserArgs {
+    input: {
+        name?: string;
+        imageBase64String?: string;
+        about?: string;
+        fcmToken?: string;
+    };
+}
+
 const profile: IFieldResolver<any, ContextAttributes, CreateUserArgs, Promise<UserDoc>> = async (source, args, context) => {
     const userRecord = await authCheck(context.req);
 
@@ -97,6 +106,22 @@ const searchUsers: IFieldResolver<any, ContextAttributes, SearchUserArgs, Promis
 
 }
 
+const updateUser: IFieldResolver<any, ContextAttributes, UpdateUserArgs, Promise<UserDoc>> = async (source, args, context) => {
+    const userAuthRecord = await authCheck(context.req);
+
+    const { input } = args;
+
+    try {
+        const updatedUser = await UserService.getAndUpdateOneUser(userAuthRecord.uid, input);
+        if (!updatedUser) {
+            throw UserErrors.general.userNotFound;
+        }
+        return updatedUser;
+    } catch (error) {
+        throw getGraphqlError(error);
+    }
+}
+
 const userResolverMap: IResolvers = {
     DateTime: DateTimeResolver,
     Query: {
@@ -105,6 +130,7 @@ const userResolverMap: IResolvers = {
     },
     Mutation: {
         createUser,
+        updateUser,
     }
 };
 

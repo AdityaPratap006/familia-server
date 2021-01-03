@@ -22,6 +22,13 @@ interface UpdateUserInput {
     fcmToken?: string;
 }
 
+interface UserDataToBeUpdated {
+    name?: string;
+    about?: string;
+    image?: ProfileImageInput;
+    fcmToken?: string;
+}
+
 export default class UserService {
 
     static getAllUsers = async () => {
@@ -73,13 +80,10 @@ export default class UserService {
         }
     }
 
-    static getAndUpdateOneUser = async (userEmail: string, newUserData: UpdateUserInput) => {
+    static getAndUpdateOneUser = async (userAuthId: string, newUserData: UpdateUserInput) => {
         try {
 
-            let profileImageData: ProfileImageInput = {
-                public_id: '',
-                url: '',
-            }
+            const dataToBeUpdated: UserDataToBeUpdated = {};
 
             // if (newUserData.imageBase64String) {
             //     try {
@@ -98,15 +102,19 @@ export default class UserService {
             //     }
             // }
 
-            delete newUserData.imageBase64String;
 
-            // const dataToBeUpdated = { ...newUserData };
+            if (newUserData.name && newUserData.name.trim() !== '') {
+                dataToBeUpdated.name = newUserData.name;
+            }
+
+            if (newUserData.about) {
+                dataToBeUpdated.about = newUserData.about;
+            }
 
             const updatedUser = await User.findOneAndUpdate({
-                email: userEmail
+                auth_id: userAuthId,
             }, {
-                ...newUserData,
-                image: profileImageData,
+                ...dataToBeUpdated,
             }, {
                 new: true
             }).exec();

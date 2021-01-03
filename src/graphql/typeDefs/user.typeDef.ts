@@ -28,10 +28,10 @@ const authType = gql`
     }
 
     input UpdateUserInput {
-        email: String
         name: String
         imageBase64String: String
         about: String
+        fcmToken: String
     }
 
     input SetDefaultFamilyIdInput {
