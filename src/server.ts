@@ -1,3 +1,4 @@
+import _newrelic from 'newrelic';
 import express, { Express, Request, Response } from 'express';
 import http from 'http';
 import chalk from "chalk";
