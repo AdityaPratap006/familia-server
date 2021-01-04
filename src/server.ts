@@ -4,18 +4,16 @@ import http from 'http';
 import chalk from "chalk";
 import { config as dotenvConfig } from 'dotenv';
 import cors from 'cors';
-import { ApolloServer, PubSub } from 'apollo-server-express';
+import { ApolloServer } from 'apollo-server-express';
 import { makeExecutableSchema } from 'graphql-tools';
 import { loadFilesSync } from '@graphql-tools/load-files';
 import { mergeTypeDefs, mergeResolvers } from '@graphql-tools/merge';
 import { GraphQLSchema } from 'graphql';
 import path from 'path';
-import { getContextFunction } from './graphql/helpers/context';
+import { contextFunction } from './graphql/helpers/context';
 import { connectToDatabase } from './utils/db';
 
 dotenvConfig();
-
-const pubsub = new PubSub();
 
 const app: Express = express();
 
@@ -35,9 +33,7 @@ const schema: GraphQLSchema = makeExecutableSchema({
 
 const apolloServer = new ApolloServer({
     schema: schema,
-    context: getContextFunction({
-        pubsub,
-    }),
+    context: contextFunction,
 });
 
 apolloServer.applyMiddleware({

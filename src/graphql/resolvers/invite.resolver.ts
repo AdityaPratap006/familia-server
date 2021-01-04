@@ -9,6 +9,7 @@ import { FamilyDoc } from '../../models/family.model';
 import { getGraphqlError } from '../../errors';
 import { InviteValidators, MembershipValidators, UserValidators } from '../validators';
 import { InviteEvents } from '../events/invite.events';
+import { pubsub } from '../helpers/pubsub';
 
 interface CreateInviteArgs {
     input: {
@@ -36,7 +37,7 @@ const getAllInvites: IFieldResolver<any, ContextAttributes, any, Promise<InviteD
 
 const createInvite: IFieldResolver<any, ContextAttributes, CreateInviteArgs, Promise<InviteDoc>> = async (source, args, context) => {
     const { input: { family: familyId, to: toUserId } } = args;
-    const { req, pubsub } = context;
+    const { req } = context;
 
     const userAuthRecord = await authCheck(req);
     const fromUser = await UserValidators.checkIfUserExists(userAuthRecord);
@@ -87,7 +88,7 @@ const getInvitesSentByUser: IFieldResolver<any, ContextAttributes, any, Promise<
 
 const deleteInvite: IFieldResolver<any, ContextAttributes, FindInviteArgs, Promise<string>> = async (source, args, context) => {
     const { input: { inviteId } } = args;
-    const { req, pubsub } = context;
+    const { req } = context;
 
     const userAuthRecord = await authCheck(req);
     const requestingUser = await UserValidators.checkIfUserExists(userAuthRecord);
@@ -127,13 +128,11 @@ const acceptInvite: IFieldResolver<any, ContextAttributes, FindInviteArgs, Promi
 }
 
 const inviteCreatedSubscription: IFieldResolver<any, ContextAttributes, any, AsyncIterator<InviteDoc>> = (source, args, context) => {
-    const { pubsub } = context;
 
     return pubsub.asyncIterator([InviteEvents.INVITE_CREATED]);
 }
 
 const inviteDeletedSubscription: IFieldResolver<any, ContextAttributes, any, AsyncIterator<InviteDoc>> = (source, args, context) => {
-    const { pubsub } = context;
 
     return pubsub.asyncIterator([InviteEvents.INVITE_DELETED]);
 }
