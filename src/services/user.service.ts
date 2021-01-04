@@ -1,7 +1,7 @@
 import chalk from 'chalk';
 import { User } from '../models/user.model';
 import { internalServerError } from '../errors';
-// import { cloudinary } from '../utils/cloudinary';
+import { cloudinary } from '../utils/cloudinary';
 
 interface NewUserInput {
     email: string;
@@ -83,24 +83,40 @@ export default class UserService {
     static getAndUpdateOneUser = async (userAuthId: string, newUserData: UpdateUserInput) => {
         try {
 
+
+            const user = await User.findOne({ auth_id: userAuthId });
+
+            if (!user) {
+                throw Error('user not found');
+            }
+
+
             const dataToBeUpdated: UserDataToBeUpdated = {};
 
-            // if (newUserData.imageBase64String) {
-            //     try {
-            //         const result = await cloudinary.uploader.upload(newUserData.imageBase64String, {
-            //             public_id: `${Date.now()}`,
-            //             upload_preset: `social_app_graphql_profile_pics`,
-            //         });
+            if (newUserData.imageBase64String) {
 
-            //         profileImageData = {
-            //             public_id: result.public_id,
-            //             url: result.url,
-            //         };
+                if (user.image.public_id.trim()) {
+                    try {
+                        await cloudinary.uploader.destroy(user.image.public_id);
+                    } catch (error) {
+                        throw internalServerError;
+                    }
+                }
 
-            //     } catch (error) {
-            //         throw Error(`error uploading image`);
-            //     }
-            // }
+                try {
+                    const result = await cloudinary.uploader.upload(newUserData.imageBase64String, {
+                        upload_preset: `profile_pics`,
+                    });
+
+                    dataToBeUpdated.image = {
+                        public_id: result.public_id,
+                        url: result.url,
+                    };
+
+                } catch (error) {
+                    throw internalServerError;
+                }
+            }
 
 
             if (newUserData.name && newUserData.name.trim() !== '') {
