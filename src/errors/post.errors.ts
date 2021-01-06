@@ -9,7 +9,12 @@ const userInput = {
     familyIdRequired: new CustomError(CustomErrorCodes.STATUS_400_BAD_INPUT, `familyId is required`),
 }
 
+const forbidden = {
+    userNotAMember: new CustomError(CustomErrorCodes.STATUS_403_FORBIDDEN, `sorry you cannot post in a family you don't belong to`),
+}
+
 export const PostErrors = {
     general,
     userInput,
+    forbidden,
 }

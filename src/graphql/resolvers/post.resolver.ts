@@ -7,6 +7,7 @@ import { PostDoc } from '../../models/post.model';
 import PostService from '../../services/post.service';
 import { UserDoc } from '../../models/user.model';
 import UserService from '../../services/user.service';
+import MembershipService from '../../services/membership.service';
 
 interface CreatePostArgs {
     input: {
@@ -42,6 +43,17 @@ const createPost: IFieldResolver<any, ContextAttributes, CreatePostArgs, Promise
     }
 
     const { input: { title, content, familyId, imageBase64String } } = args;
+
+    // check if author belongs to the family
+    try {
+        const members = await MembershipService.getMembersOfAFamily(familyId);
+        const isValidMembership = members.some(member => member.id === author.id);
+        if (!isValidMembership) {
+            throw PostErrors.forbidden.userNotAMember;
+        }
+    } catch (error) {
+        throw getGraphqlError(error);
+    }
 
     if (!title || title.trim() === '') {
         throw getGraphqlError(PostErrors.userInput.titleRequired);
