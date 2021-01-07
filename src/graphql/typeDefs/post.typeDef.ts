@@ -28,9 +28,14 @@ const postType = gql`
         skip: Int
     }
 
+    input AllPostsInFamilyInput {
+        familyId: String!
+    }
+
     type Query {
         totalPosts: Int!
         allPosts(input: AllPostsInput!): [Post!]!
+        allPostsInFamily(input: AllPostsInFamilyInput!): [Post!]!
     }
 
     type Mutation {
