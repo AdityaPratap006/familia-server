@@ -71,10 +71,11 @@ const createPost: IFieldResolver<any, ContextAttributes, CreatePostArgs, Promise
 
     try {
         const newPost = await PostService.createPost({
-            title: title,
-            content: content || '',
-            family: familyId,
+            title,
+            content,
+            familyId,
             author: author.id,
+            imageBase64String,
         });
 
         if (!newPost) {

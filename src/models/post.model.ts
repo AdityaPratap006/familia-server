@@ -11,7 +11,7 @@ interface PostPhoto {
 // that are required to create a new Post
 export interface PostAttributes {
     title: string;
-    content: string;
+    content?: string;
     image?: PostPhoto;
     author: string;
     family: string;
