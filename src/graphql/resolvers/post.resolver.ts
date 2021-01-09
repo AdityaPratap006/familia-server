@@ -8,6 +8,8 @@ import PostService from '../../services/post.service';
 import { UserDoc } from '../../models/user.model';
 import UserService from '../../services/user.service';
 import MembershipService from '../../services/membership.service';
+import { pubsub } from '../helpers/pubsub';
+import { PostEvents } from '../events/post.events';
 
 interface CreatePostArgs {
     input: {
@@ -82,6 +84,10 @@ const createPost: IFieldResolver<any, ContextAttributes, CreatePostArgs, Promise
             throw PostErrors.general.postNotFound;
         }
 
+        pubsub.publish(PostEvents.POST_ADDED, {
+            onPostAdded: newPost,
+        });
+
         return newPost;
     } catch (error) {
         throw getGraphqlError(error);
@@ -124,6 +130,10 @@ const allPostsInFamily: IFieldResolver<any, ContextAttributes, AllPostsInFamilyA
     }
 }
 
+const postAddedSubscription: IFieldResolver<any, ContextAttributes, any, AsyncIterator<PostDoc>> = (source, args, context) => {
+    return pubsub.asyncIterator([PostEvents.POST_ADDED]);
+}
+
 const postResolverMap: IResolvers = {
     DateTime: DateTimeResolver,
     Query: {
@@ -132,7 +142,12 @@ const postResolverMap: IResolvers = {
     },
     Mutation: {
         createPost,
-    }
+    },
+    Subscription: {
+        onPostAdded: {
+            subscribe: postAddedSubscription,
+        },
+    },
 };
 
 export default postResolverMap;
