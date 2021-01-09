@@ -1,7 +1,9 @@
+import chalk from 'chalk';
+import util from 'util';
 import { IFieldResolver, IResolvers } from 'graphql-tools';
 import { DateTimeResolver } from 'graphql-scalars';
-import { authCheck } from '../helpers/auth';
-import { ContextAttributes } from '../helpers/context';
+import { authCheck, getVerifiedUser } from '../helpers/auth';
+import { ContextAttributes, SubscriptionContext } from '../helpers/context';
 import { getGraphqlError, PostErrors, UserErrors } from '../../errors';
 import { PostDoc } from '../../models/post.model';
 import PostService from '../../services/post.service';
@@ -130,8 +132,16 @@ const allPostsInFamily: IFieldResolver<any, ContextAttributes, AllPostsInFamilyA
     }
 }
 
-const postAddedSubscription: IFieldResolver<any, ContextAttributes, any, AsyncIterator<PostDoc>> = (source, args, context) => {
-    return pubsub.asyncIterator([PostEvents.POST_ADDED]);
+const postAddedSubscription: IFieldResolver<any, SubscriptionContext, any, Promise<AsyncIterator<PostDoc>>> = async (source, args, context) => {
+    try {
+        const { connection: { context: { authorization: authToken } } } = context;
+
+        await getVerifiedUser(authToken);
+
+        return pubsub.asyncIterator([PostEvents.POST_ADDED]);
+    } catch (error) {
+        throw getGraphqlError(error);
+    }
 }
 
 const postResolverMap: IResolvers = {
