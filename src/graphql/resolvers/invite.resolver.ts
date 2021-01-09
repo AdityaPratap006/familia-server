@@ -1,7 +1,7 @@
 import { IFieldResolver, IResolvers } from 'graphql-tools';
 import { DateTimeResolver } from 'graphql-scalars';
-import { authCheck } from '../helpers/auth';
-import { ContextAttributes } from '../helpers/context';
+import { authCheck, getVerifiedUser } from '../helpers/auth';
+import { ContextAttributes, SubscriptionContext } from '../helpers/context';
 import { UserDoc } from '../../models/user.model';
 import { InviteDoc } from '../../models/invite.model';
 import InviteService from '../../services/invite.service';
@@ -127,14 +127,28 @@ const acceptInvite: IFieldResolver<any, ContextAttributes, FindInviteArgs, Promi
     }
 }
 
-const inviteCreatedSubscription: IFieldResolver<any, ContextAttributes, any, AsyncIterator<InviteDoc>> = (source, args, context) => {
+const inviteCreatedSubscription: IFieldResolver<any, SubscriptionContext, any, Promise<AsyncIterator<InviteDoc>>> = async (source, args, context) => {
+    try {
+        const { connection: { context: { authorization: authToken } } } = context;
 
-    return pubsub.asyncIterator([InviteEvents.INVITE_CREATED]);
+        await getVerifiedUser(authToken);
+
+        return pubsub.asyncIterator([InviteEvents.INVITE_CREATED]);
+    } catch (error) {
+        throw getGraphqlError(error);
+    }
 }
 
-const inviteDeletedSubscription: IFieldResolver<any, ContextAttributes, any, AsyncIterator<InviteDoc>> = (source, args, context) => {
+const inviteDeletedSubscription: IFieldResolver<any, SubscriptionContext, any, Promise<AsyncIterator<InviteDoc>>> = async (source, args, context) => {
+    try {
+        const { connection: { context: { authorization: authToken } } } = context;
 
-    return pubsub.asyncIterator([InviteEvents.INVITE_DELETED]);
+        await getVerifiedUser(authToken);
+
+        return pubsub.asyncIterator([InviteEvents.INVITE_DELETED]);
+    } catch (error) {
+        throw getGraphqlError(error);
+    }
 }
 
 const inviteResolverMap: IResolvers = {
