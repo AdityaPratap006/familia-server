@@ -13,6 +13,7 @@ import MembershipService from '../../services/membership.service';
 import { pubsub } from '../helpers/pubsub';
 import { LikeDoc } from '../../models/like.model';
 import LikeService from '../../services/like.service';
+import { LikeEvents } from '../events/like.events';
 
 interface AllLikesOnPostArgs {
     input: {
@@ -81,6 +82,11 @@ const createLike: IFieldResolver<any, ContextAttributes, CreateLikeArgs, Promise
             postId: postId,
             userId: userWhoLiked.id,
         });
+
+        pubsub.publish(LikeEvents.ON_LIKED, {
+            onLiked: newLike,
+        });
+
         return newLike;
     } catch (error) {
         throw getGraphqlError(error);
@@ -143,6 +149,18 @@ const deleteLike: IFieldResolver<any, ContextAttributes, DeleteLikeArgs, Promise
     }
 }
 
+const onLikedSubscription: IFieldResolver<any, SubscriptionContext, any, Promise<AsyncIterator<PostDoc>>> = async (source, args, context) => {
+    try {
+        const { connection: { context: { authorization: authToken } } } = context;
+
+        await getVerifiedUser(authToken);
+
+        return pubsub.asyncIterator([LikeEvents.ON_LIKED]);
+    } catch (error) {
+        throw getGraphqlError(error);
+    }
+}
+
 const likeResolverMap: IResolvers = {
     DateTime: DateTimeResolver,
     Query: {
@@ -156,7 +174,7 @@ const likeResolverMap: IResolvers = {
     },
     Subscription: {
         onLiked: {
-
+            subscribe: onLikedSubscription,
         },
     },
 };

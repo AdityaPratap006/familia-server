@@ -38,7 +38,7 @@ const likeType = gql`
 
     type Subscription {
         onLiked: Like
-        onDisliked: String
+        onUnliked: String
     }
 `;
 
