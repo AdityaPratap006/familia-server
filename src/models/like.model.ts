@@ -39,6 +39,11 @@ const LikeSchema = new mongoose.Schema({
     },
 }, { timestamps: true });
 
+LikeSchema.index({
+    post: 1,
+    likedBy: 1,
+}, { unique: true });
+
 LikeSchema.statics.build = (attrs: LikeAttributes) => {
     return new Like(attrs);
 };
