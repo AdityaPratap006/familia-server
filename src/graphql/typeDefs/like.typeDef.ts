@@ -22,7 +22,7 @@ const likeType = gql`
     }
 
     input DeleteLikeInput {
-        postId: String!
+        likeId: String!
     }
 
     input OnLikedInput {

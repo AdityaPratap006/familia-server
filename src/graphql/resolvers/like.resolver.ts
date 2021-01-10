@@ -4,7 +4,7 @@ import { IFieldResolver, IResolvers } from 'graphql-tools';
 import { DateTimeResolver } from 'graphql-scalars';
 import { authCheck, getVerifiedUser } from '../helpers/auth';
 import { ContextAttributes, SubscriptionContext } from '../helpers/context';
-import { getGraphqlError, PostErrors, UserErrors } from '../../errors';
+import { CustomError, CustomErrorCodes, getGraphqlError, PostErrors, UserErrors } from '../../errors';
 import { PostDoc } from '../../models/post.model';
 import PostService from '../../services/post.service';
 import { UserDoc } from '../../models/user.model';
@@ -35,7 +35,7 @@ interface IsPostLikedByUserArgs {
 
 interface DeleteLikeArgs {
     input: {
-        postId: string;
+        likeId: string;
     };
 }
 
@@ -146,13 +146,27 @@ const deleteLike: IFieldResolver<any, ContextAttributes, DeleteLikeArgs, Promise
         throw getGraphqlError(error);
     }
 
-    try {
-        const { input: { postId } } = args;
-        const userId = userWhoDisliked.id;
+    const { input: { likeId } } = args;
 
+    try {
+        const likeTobeDeleted = await LikeService.getOneLike(likeId);
+
+        if (!likeTobeDeleted) {
+            throw new CustomError(CustomErrorCodes.STATUS_404_NOT_FOUND, `like not found`);
+        }
+
+        const likedByUser = likeTobeDeleted.likedBy as UserDoc;
+        if (likedByUser.id !== userWhoDisliked.id) {
+            throw new CustomError(CustomErrorCodes.STATUS_403_FORBIDDEN, `sorry you cannot unlike`);
+        }
+
+    } catch (error) {
+        throw getGraphqlError(error);
+    }
+
+    try {
         const deletedLike = await LikeService.deleteLike({
-            postId,
-            userId,
+            likeId,
         });
 
         pubsub.publish(LikeEvents.ON_UNLIKED, {
