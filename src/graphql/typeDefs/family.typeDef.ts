@@ -23,6 +23,10 @@ const familyTypeDef = gql`
         description: String
     }
 
+    input GetFamilyInput {
+        familyId: String!
+    }
+
     type Mutation {
         createFamily(input: CreateFamilyInput!): Family!
         updateFamily(input: UpdateFamilyInput!): Family!
@@ -30,6 +34,7 @@ const familyTypeDef = gql`
 
     type Query {
         allFamilies: [Family]!
+        family(input: GetFamilyInput!): Family!
     }
 `;
 

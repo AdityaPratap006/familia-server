@@ -14,10 +14,33 @@ interface newFamilyArgs {
     };
 }
 
+interface GetFamilyArgs {
+    input: {
+        familyId: string;
+    }
+}
+
 const allFamilies: IFieldResolver<any, ContextAttributes, any, Promise<FamilyDoc[]>> = async (source, args, context) => {
     try {
         const families = await FamilyService.getAllFamilies();
         return families;
+    } catch (error) {
+        throw getGraphqlError(error);
+    }
+}
+
+const family: IFieldResolver<any, ContextAttributes, GetFamilyArgs, Promise<FamilyDoc>> = async (source, args, context) => {
+    await authCheck(context.req);
+
+    try {
+        const { input: { familyId } } = args;
+        const family = await FamilyService.getFamilyById(familyId);
+
+        if (!family) {
+            throw FamilyErrors.general.familyNotFound;
+        }
+
+        return family;
     } catch (error) {
         throw getGraphqlError(error);
     }
@@ -51,6 +74,7 @@ const familyResolverMap: IResolvers = {
     DateTime: DateTimeResolver,
     Query: {
         allFamilies,
+        family,
     },
     Mutation: {
         createFamily,
