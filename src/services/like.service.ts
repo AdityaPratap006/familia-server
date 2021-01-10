@@ -1,4 +1,4 @@
-import { Like } from '../models/like.model';
+import { Like, LikeDoc } from '../models/like.model';
 import { internalServerError } from '../errors';
 
 interface CreateLikeInput {
@@ -73,11 +73,13 @@ export default class LikeService {
                 throw Error;
             }
 
+            const likeData: LikeDoc = await likeToBeDeleted.populate('likedBy').execPopulate();
+
             const likeId: string = likeToBeDeleted.id;
 
             await Like.findByIdAndDelete(likeId);
 
-            return likeId;
+            return likeData;
         } catch (error) {
             throw internalServerError;
         }

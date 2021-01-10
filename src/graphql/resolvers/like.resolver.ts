@@ -39,6 +39,18 @@ interface DeleteLikeArgs {
     };
 }
 
+interface OnLikeArgs {
+    input: {
+        postId: string;
+    };
+}
+
+interface OnUnLikeArgs {
+    input: {
+        postId: string;
+    };
+}
+
 const allLikes: IFieldResolver<any, ContextAttributes, any, Promise<LikeDoc[]>> = async (source, args, context) => {
     try {
         const likes = await LikeService.getAllLikes();
@@ -119,7 +131,7 @@ const isPostLikedByUser: IFieldResolver<any, ContextAttributes, IsPostLikedByUse
     }
 }
 
-const deleteLike: IFieldResolver<any, ContextAttributes, DeleteLikeArgs, Promise<string>> = async (source, args, context) => {
+const deleteLike: IFieldResolver<any, ContextAttributes, DeleteLikeArgs, Promise<LikeDoc>> = async (source, args, context) => {
     const { req } = context;
     const userAuthRecord = await authCheck(req);
 
@@ -138,24 +150,40 @@ const deleteLike: IFieldResolver<any, ContextAttributes, DeleteLikeArgs, Promise
         const { input: { postId } } = args;
         const userId = userWhoDisliked.id;
 
-        const deletedLikeId = await LikeService.deleteLike({
+        const deletedLike = await LikeService.deleteLike({
             postId,
             userId,
         });
 
-        return deletedLikeId;
+        pubsub.publish(LikeEvents.ON_UNLIKED, {
+            onUnliked: deletedLike,
+        });
+
+        return deletedLike;
     } catch (error) {
         throw getGraphqlError(error);
     }
 }
 
-const onLikedSubscription: IFieldResolver<any, SubscriptionContext, any, Promise<AsyncIterator<PostDoc>>> = async (source, args, context) => {
+const onLikedSubscription: IFieldResolver<any, SubscriptionContext, OnLikeArgs, Promise<AsyncIterator<LikeDoc>>> = async (source, args, context) => {
     try {
         const { connection: { context: { authorization: authToken } } } = context;
 
         await getVerifiedUser(authToken);
 
         return pubsub.asyncIterator([LikeEvents.ON_LIKED]);
+    } catch (error) {
+        throw getGraphqlError(error);
+    }
+}
+
+const onUnLikedSubscription: IFieldResolver<any, SubscriptionContext, OnUnLikeArgs, Promise<AsyncIterator<LikeDoc>>> = async (source, args, context) => {
+    try {
+        const { connection: { context: { authorization: authToken } } } = context;
+
+        await getVerifiedUser(authToken);
+
+        return pubsub.asyncIterator([LikeEvents.ON_UNLIKED]);
     } catch (error) {
         throw getGraphqlError(error);
     }
@@ -176,6 +204,9 @@ const likeResolverMap: IResolvers = {
         onLiked: {
             subscribe: onLikedSubscription,
         },
+        onUnliked: {
+            subscribe: onUnLikedSubscription,
+        }
     },
 };
 
