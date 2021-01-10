@@ -17,17 +17,28 @@ const likeType = gql`
         postId: String!
     }
 
+    input IsPostLikedByUserInput {
+        postId: String!
+    }
+
+    input DeleteLikeInput {
+        postId: String!
+    }
+
     type Query {
         allLikes: [Like!]!
         allLikesOnPost(input: AllLikesOnPostInput!): [Like!]!
+        isPostLikedByUser(input: IsPostLikedByUserInput!): Boolean!
     }
 
     type Mutation {
         createLike(input: CreateLikeInput!): Like!
+        deleteLike(input: DeleteLikeInput!): String!
     }
 
     type Subscription {
         onLiked: Like
+        onDisliked: String
     }
 `;
 

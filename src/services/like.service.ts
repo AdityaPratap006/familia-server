@@ -6,6 +6,11 @@ interface CreateLikeInput {
     userId: string;
 }
 
+interface DeleteLikeInput {
+    postId: string;
+    userId: string;
+}
+
 export default class LikeService {
     static getAllLikes = async () => {
         try {
@@ -25,6 +30,18 @@ export default class LikeService {
         }
     }
 
+    static checkIfLikeExists = async (postId: string, userId: string) => {
+        try {
+            const like = await Like.findOne({ post: postId, likedBy: userId });
+            if (!like) {
+                return false;
+            }
+            return true;
+        } catch (error) {
+            throw internalServerError;
+        }
+    }
+
     static createLike = async (input: CreateLikeInput) => {
         try {
             const { postId, userId } = input;
@@ -38,6 +55,29 @@ export default class LikeService {
             await newLike.populate('likedBy').execPopulate();
 
             return newLike;
+        } catch (error) {
+            throw internalServerError;
+        }
+    }
+
+    static deleteLike = async (input: DeleteLikeInput) => {
+        try {
+            const { postId, userId } = input;
+
+            const likeToBeDeleted = await Like.findOne({
+                likedBy: userId,
+                post: postId,
+            });
+
+            if (!likeToBeDeleted) {
+                throw Error;
+            }
+
+            const likeId: string = likeToBeDeleted.id;
+
+            await Like.findByIdAndDelete(likeId);
+
+            return likeId;
         } catch (error) {
             throw internalServerError;
         }

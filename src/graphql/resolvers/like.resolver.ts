@@ -26,6 +26,18 @@ interface CreateLikeArgs {
     };
 }
 
+interface IsPostLikedByUserArgs {
+    input: {
+        postId: string;
+    };
+}
+
+interface DeleteLikeArgs {
+    input: {
+        postId: string;
+    };
+}
+
 const allLikes: IFieldResolver<any, ContextAttributes, any, Promise<LikeDoc[]>> = async (source, args, context) => {
     try {
         const likes = await LikeService.getAllLikes();
@@ -75,14 +87,72 @@ const createLike: IFieldResolver<any, ContextAttributes, CreateLikeArgs, Promise
     }
 }
 
+const isPostLikedByUser: IFieldResolver<any, ContextAttributes, IsPostLikedByUserArgs, Promise<boolean>> = async (source, args, context) => {
+    const { req } = context;
+    const userAuthRecord = await authCheck(req);
+
+    let userToBeCheckedFor: UserDoc;
+    try {
+        const user = await UserService.getOneUserByAuthId(userAuthRecord.uid);
+        if (!user) {
+            throw UserErrors.general.userNotFound;
+        }
+        userToBeCheckedFor = user;
+    } catch (error) {
+        throw getGraphqlError(error);
+    }
+
+    try {
+        const { input: { postId } } = args;
+        const userId = userToBeCheckedFor.id;
+
+        const isLiked = await LikeService.checkIfLikeExists(postId, userId);
+        return isLiked;
+    } catch (error) {
+        throw getGraphqlError(error);
+    }
+}
+
+const deleteLike: IFieldResolver<any, ContextAttributes, DeleteLikeArgs, Promise<string>> = async (source, args, context) => {
+    const { req } = context;
+    const userAuthRecord = await authCheck(req);
+
+    let userWhoDisliked: UserDoc;
+    try {
+        const user = await UserService.getOneUserByAuthId(userAuthRecord.uid);
+        if (!user) {
+            throw UserErrors.general.userNotFound;
+        }
+        userWhoDisliked = user;
+    } catch (error) {
+        throw getGraphqlError(error);
+    }
+
+    try {
+        const { input: { postId } } = args;
+        const userId = userWhoDisliked.id;
+
+        const deletedLikeId = await LikeService.deleteLike({
+            postId,
+            userId,
+        });
+
+        return deletedLikeId;
+    } catch (error) {
+        throw getGraphqlError(error);
+    }
+}
+
 const likeResolverMap: IResolvers = {
     DateTime: DateTimeResolver,
     Query: {
         allLikes,
         allLikesOnPost,
+        isPostLikedByUser,
     },
     Mutation: {
         createLike,
+        deleteLike,
     },
     Subscription: {
         onLiked: {
