@@ -9,7 +9,7 @@ exports.config = {
   /**
    * Array of application names.
    */
-  app_name: ['familia-server'],
+  app_name: ['app193973559@heroku.com'],
   /**
    * Your New Relic license key.
    */
