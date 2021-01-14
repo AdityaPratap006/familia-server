@@ -3,7 +3,6 @@ import util from 'util';
 import { withFilter, IFieldResolver as IFieldResolverPrimitive } from 'apollo-server-express';
 import { IFieldResolver, IResolvers } from 'graphql-tools';
 import { DateTimeResolver } from 'graphql-scalars';
-import { mongo } from 'mongoose';
 import { authCheck } from '../helpers/auth';
 import { ContextAttributes, SubscriptionContext } from '../helpers/context';
 import { CustomError, CustomErrorCodes, getGraphqlError, PostErrors, UserErrors } from '../../errors';
@@ -14,6 +13,7 @@ import { LikeDoc } from '../../models/like.model';
 import LikeService from '../../services/like.service';
 import { LikeEvents } from '../events/like.events';
 import { PostDoc } from '../../models/post.model';
+import { compareMongoDocumentIds } from '../../utils/db';
 
 interface AllLikesOnPostArgs {
     input: {
@@ -194,10 +194,7 @@ const onLikedSubscription: IFieldResolverPrimitive<any, SubscriptionContext, OnL
             const post = payload.onLiked.post as PostDoc;
             const { input: { postId } } = variables;
 
-            const id1 = new mongo.ObjectID(post._id);
-            const id2 = new mongo.ObjectID(postId);
-
-            return id1.equals(id2);
+            return compareMongoDocumentIds(post._id, postId);
         }
     )(source, args, context);
 }
@@ -209,10 +206,7 @@ const onUnLikedSubscription: IFieldResolverPrimitive<any, SubscriptionContext, O
             const post = payload.onUnliked.post as PostDoc;
             const { input: { postId } } = variables;
 
-            const id1 = new mongo.ObjectID(post._id);
-            const id2 = new mongo.ObjectID(postId);
-
-            return id1.equals(id2);
+            return compareMongoDocumentIds(post._id, postId);
         }
     )(source, args, context);
 }

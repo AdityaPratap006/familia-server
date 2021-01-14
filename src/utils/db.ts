@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import mongoose from "mongoose";
+import mongoose, { mongo } from 'mongoose';
 
 export const connectToDatabase = async () => {
     try {
@@ -15,4 +15,11 @@ export const connectToDatabase = async () => {
     } catch (error) {
         console.log(chalk.red(`\nError connecting to mongodb: ${error.message}\n`));
     }
+}
+
+export const compareMongoDocumentIds = (id1: any, id2: any) => {
+    const objId1 = new mongo.ObjectID(id1);
+    const objId2 = new mongo.ObjectID(id2);
+
+    return objId1.equals(objId2);
 }
