@@ -1,6 +1,6 @@
 import express, { Express, Request, Response } from 'express';
 import http from 'http';
-import chalk from "chalk";
+import chalk from 'chalk';
 import { config as dotenvConfig } from 'dotenv';
 import cors from 'cors';
 import { ApolloServer } from 'apollo-server-express';
@@ -11,6 +11,7 @@ import { GraphQLSchema } from 'graphql';
 import path from 'path';
 import { contextFunction } from './graphql/helpers/context';
 import { connectToDatabase } from './utils/db';
+import { getVerifiedUser } from './graphql/helpers/auth';
 
 dotenvConfig();
 
@@ -33,6 +34,21 @@ const schema: GraphQLSchema = makeExecutableSchema({
 const apolloServer = new ApolloServer({
     schema: schema,
     context: contextFunction,
+    subscriptions: {
+        onConnect: async (connectionParams: any, _webSocket) => {
+            if (connectionParams.authorization) {
+                try {
+                    const user = await getVerifiedUser(connectionParams.authorization);
+                    return user;
+                } catch (error) {
+                    throw error;
+                }
+            } else {
+                throw new Error('Missing auth token!');
+            }
+
+        },
+    },
 });
 
 apolloServer.applyMiddleware({

@@ -1,5 +1,6 @@
 import chalk from 'chalk';
 import util from 'util';
+import { withFilter, IFieldResolver as IFieldResolverPrimitive } from 'apollo-server-express';
 import { IFieldResolver, IResolvers } from 'graphql-tools';
 import { DateTimeResolver } from 'graphql-scalars';
 import { authCheck, getVerifiedUser } from '../helpers/auth';
@@ -132,16 +133,8 @@ const allPostsInFamily: IFieldResolver<any, ContextAttributes, AllPostsInFamilyA
     }
 }
 
-const postAddedSubscription: IFieldResolver<any, SubscriptionContext, any, Promise<AsyncIterator<PostDoc>>> = async (source, args, context) => {
-    try {
-        const { connection: { context: { authorization: authToken } } } = context;
-
-        await getVerifiedUser(authToken);
-
-        return pubsub.asyncIterator([PostEvents.POST_ADDED]);
-    } catch (error) {
-        throw getGraphqlError(error);
-    }
+const postAddedSubscription: IFieldResolverPrimitive<any, SubscriptionContext, any> = (source, args, context) => {
+    return pubsub.asyncIterator([PostEvents.POST_ADDED]);
 }
 
 const postResolverMap: IResolvers = {

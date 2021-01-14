@@ -1,6 +1,9 @@
-import firebaseAdmin, { ServiceAccount } from 'firebase-admin';
+import * as firebaseAdmin from 'firebase-admin';
+import { config as dotenvConfig } from 'dotenv';
 
-const serviceAccountParams = <ServiceAccount>{
+dotenvConfig();
+
+const serviceAccountParams = <firebaseAdmin.ServiceAccount>{
     type: process.env.FIREBASE_type,
     projectId: process.env.FIREBASE_projectId,
     privateKeyId: process.env.FIREBASE_privateKeyId,

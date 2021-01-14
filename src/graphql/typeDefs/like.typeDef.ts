@@ -29,6 +29,10 @@ const likeType = gql`
         postId: String!
     }
 
+    input OnUnlikedInput {
+        postId: String!
+    }
+
     type Query {
         allLikes: [Like!]!
         allLikesOnPost(input: AllLikesOnPostInput!): [Like!]!
@@ -41,8 +45,8 @@ const likeType = gql`
     }
 
     type Subscription {
-        onLiked: Like
-        onUnliked: Like
+        onLiked(input: OnLikedInput!): Like
+        onUnliked(input: OnUnlikedInput!): Like
     }
 `;
 

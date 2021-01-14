@@ -1,19 +1,19 @@
 import chalk from 'chalk';
 import util from 'util';
+import { withFilter, IFieldResolver as IFieldResolverPrimitive } from 'apollo-server-express';
 import { IFieldResolver, IResolvers } from 'graphql-tools';
 import { DateTimeResolver } from 'graphql-scalars';
-import { authCheck, getVerifiedUser } from '../helpers/auth';
+import { mongo } from 'mongoose';
+import { authCheck } from '../helpers/auth';
 import { ContextAttributes, SubscriptionContext } from '../helpers/context';
 import { CustomError, CustomErrorCodes, getGraphqlError, PostErrors, UserErrors } from '../../errors';
-import { PostDoc } from '../../models/post.model';
-import PostService from '../../services/post.service';
 import { UserDoc } from '../../models/user.model';
 import UserService from '../../services/user.service';
-import MembershipService from '../../services/membership.service';
 import { pubsub } from '../helpers/pubsub';
 import { LikeDoc } from '../../models/like.model';
 import LikeService from '../../services/like.service';
 import { LikeEvents } from '../events/like.events';
+import { PostDoc } from '../../models/post.model';
 
 interface AllLikesOnPostArgs {
     input: {
@@ -49,6 +49,14 @@ interface OnUnLikeArgs {
     input: {
         postId: string;
     };
+}
+
+interface OnLikedPayload {
+    onLiked: LikeDoc;
+}
+
+interface OnUnlikedPayload {
+    onUnliked: LikeDoc;
 }
 
 const allLikes: IFieldResolver<any, ContextAttributes, any, Promise<LikeDoc[]>> = async (source, args, context) => {
@@ -179,28 +187,34 @@ const deleteLike: IFieldResolver<any, ContextAttributes, DeleteLikeArgs, Promise
     }
 }
 
-const onLikedSubscription: IFieldResolver<any, SubscriptionContext, OnLikeArgs, Promise<AsyncIterator<LikeDoc>>> = async (source, args, context) => {
-    try {
-        const { connection: { context: { authorization: authToken } } } = context;
+const onLikedSubscription: IFieldResolverPrimitive<any, SubscriptionContext, OnLikeArgs> = async (source, args, context) => {
+    return withFilter(
+        () => pubsub.asyncIterator([LikeEvents.ON_LIKED]),
+        (payload: OnLikedPayload, variables: OnLikeArgs) => {
+            const post = payload.onLiked.post as PostDoc;
+            const { input: { postId } } = variables;
 
-        await getVerifiedUser(authToken);
+            const id1 = new mongo.ObjectID(post._id);
+            const id2 = new mongo.ObjectID(postId);
 
-        return pubsub.asyncIterator([LikeEvents.ON_LIKED]);
-    } catch (error) {
-        throw getGraphqlError(error);
-    }
+            return id1.equals(id2);
+        }
+    )(source, args, context);
 }
 
-const onUnLikedSubscription: IFieldResolver<any, SubscriptionContext, OnUnLikeArgs, Promise<AsyncIterator<LikeDoc>>> = async (source, args, context) => {
-    try {
-        const { connection: { context: { authorization: authToken } } } = context;
+const onUnLikedSubscription: IFieldResolverPrimitive<any, SubscriptionContext, OnUnLikeArgs> = async (source, args, context) => {
+    return withFilter(
+        () => pubsub.asyncIterator([LikeEvents.ON_UNLIKED]),
+        (payload: OnUnlikedPayload, variables: OnUnLikeArgs) => {
+            const post = payload.onUnliked.post as PostDoc;
+            const { input: { postId } } = variables;
 
-        await getVerifiedUser(authToken);
+            const id1 = new mongo.ObjectID(post._id);
+            const id2 = new mongo.ObjectID(postId);
 
-        return pubsub.asyncIterator([LikeEvents.ON_UNLIKED]);
-    } catch (error) {
-        throw getGraphqlError(error);
-    }
+            return id1.equals(id2);
+        }
+    )(source, args, context);
 }
 
 const likeResolverMap: IResolvers = {
