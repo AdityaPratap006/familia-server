@@ -17,6 +17,15 @@ interface AllChatMessagesArgs {
     };
 }
 
+interface CreateMessageArgs {
+    input: {
+        familyId: string;
+        from: string;
+        to: string;
+        text: string;
+    };
+}
+
 const allChatMessages: IFieldResolver<any, ContextAttributes, AllChatMessagesArgs, Promise<MessageDoc[]>> = async (source, args, context) => {
     const { req } = context;
     const userAuthRecord = await authCheck(req);
@@ -48,13 +57,42 @@ const allChatMessages: IFieldResolver<any, ContextAttributes, AllChatMessagesArg
     }
 }
 
+const createMessage: IFieldResolver<any, ContextAttributes, CreateMessageArgs, Promise<MessageDoc>> = async (source, args, context) => {
+    const { req } = context;
+    const userAuthRecord = await authCheck(req);
+
+    let requestingUser = await UserValidators.checkIfUserExists(userAuthRecord);
+
+    const { input: { familyId, from, to, text } } = args;
+
+    if (from.toString() === to.toString()) {
+        throw getGraphqlError(MessageErrors.forbidden.cannotAccessChats);
+    }
+
+    if (!compareMongoDocumentIds(from, requestingUser._id)) {
+        throw getGraphqlError(MessageErrors.forbidden.cannotAccessChats);
+    }
+
+    try {
+        const message = await MessageService.createNewMessage({
+            family: familyId,
+            from: from,
+            to: to,
+            text: text,
+        });
+        return message;
+    } catch (error) {
+        throw getGraphqlError(error);
+    }
+}
+
 const messageResolverMap: IResolvers = {
     DateTime: DateTimeResolver,
     Query: {
         allChatMessages,
     },
     Mutation: {
-
+        createMessage,
     },
     Subscription: {
 

@@ -4,8 +4,8 @@ const messageType = gql`
     type Message {
         _id: ID!
         text: String!
-        from: String!
-        to: String!
+        from: User!
+        to: User!
         family: String!
         createdAt: DateTime!
         updatedAt: DateTime!
@@ -15,7 +15,7 @@ const messageType = gql`
         text: String!
         from: String!
         to: String!
-        family: String!
+        familyId: String!
     }
 
     input AllChatMessagesInput {
