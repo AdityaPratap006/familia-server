@@ -1,4 +1,6 @@
 import mongoose from 'mongoose';
+import { fieldEncryptionPlugin as jumblator } from 'mongoose-jumblator';
+import { secretKey } from '../utils/encryption';
 import { FamilyDoc } from './family.model';
 import { UserDoc } from './user.model';
 
@@ -49,8 +51,19 @@ const MessageSchema = new mongoose.Schema({
     },
     text: {
         type: String,
+        encrypt: true,
+        searchable: true,
     },
 }, { timestamps: true });
+
+MessageSchema.plugin(jumblator, {
+    secret: secretKey,
+    keySize: 256,
+    keySalt: `message-salt`,
+    seed: `message-seed`,
+    encoding: `Hex`,
+    length: 512,
+});
 
 MessageSchema.statics.build = (attrs: MessageAttributes) => {
     return new Message(attrs);

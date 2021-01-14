@@ -64,6 +64,8 @@ apolloServer.installSubscriptionHandlers(mainServer);
 
 const startServer = async () => {
     try {
+        console.log(`Server is initializing!`);
+        console.log(chalk.gray(`please wait...`));
         await connectToDatabase();
 
         const PORT = process.env.PORT;

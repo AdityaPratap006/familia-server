@@ -10,6 +10,7 @@ export default class MessageService {
 
             return messages;
         } catch (error) {
+
             throw internalServerError;
         }
     }
@@ -35,6 +36,8 @@ export default class MessageService {
 
             return messages;
         } catch (error) {
+            console.log(error);
+
             throw internalServerError;
         }
     }
@@ -65,11 +68,12 @@ export default class MessageService {
             });
 
             await newMessage.save();
-            await newMessage
+            const messageResult = await newMessage
                 .populate('from')
                 .populate('to')
                 .execPopulate();
-            return newMessage;
+
+            return messageResult;
         } catch (error) {
             throw internalServerError;
         }

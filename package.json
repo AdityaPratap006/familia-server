@@ -41,6 +41,7 @@
     "graphql": "^15.4.0",
     "graphql-scalars": "^1.4.1",
     "graphql-tools": "^7.0.1",
-    "mongoose": "^5.10.15"
+    "mongoose": "^5.10.15",
+    "mongoose-jumblator": "^1.2.4"
   }
 }
