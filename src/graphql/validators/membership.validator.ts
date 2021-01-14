@@ -20,7 +20,7 @@ const checkIfUserIsAlreadyAMember = async (familyId: string, toUserId: string) =
     try {
         const members = await MembershipService.getMembersOfAFamily(familyId);
         const memberIdList = members.map(member => member.id);
-        console.log(memberIdList);
+
         if (memberIdList.includes(toUserId)) {
             throw MembershipErrors.forbidden.userAlreadyAMember;
         }
@@ -29,8 +29,21 @@ const checkIfUserIsAlreadyAMember = async (familyId: string, toUserId: string) =
     }
 }
 
+const checkIfUserBelongsToFamily = async (familyId: string, userId: string) => {
+    try {
+        const members = await MembershipService.getMembersOfAFamily(familyId);
+        const memberIdList = members.map(member => member.id);
+
+        if (!memberIdList.includes(userId)) {
+            throw MembershipErrors.forbidden.userNotAMember;
+        }
+    } catch (error) {
+        throw getGraphqlError(error);
+    }
+}
 
 export const MembershipValidators = {
     checkIfSpaceLeftInFamily,
     checkIfUserIsAlreadyAMember,
+    checkIfUserBelongsToFamily,
 };
