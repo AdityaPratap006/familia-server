@@ -62,6 +62,10 @@ export default class MessageService {
             throw MessageErrors.userInput.textRequired;
         }
 
+        if (text.trim().length > 1500) {
+            throw MessageErrors.userInput.textTooLong;
+        }
+
         try {
             const newMessage = Message.build({
                 ...attrs,

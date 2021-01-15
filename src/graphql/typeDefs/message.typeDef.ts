@@ -24,6 +24,12 @@ const messageType = gql`
         to: String!
     }
 
+    input  OnMessageAddedInput {
+        familyId: String!
+        from: String!
+        to: String!
+    }
+
     type Query {
         totalMessages: Int!
         allChatMessages(input: AllChatMessagesInput!): [Message!]!
@@ -34,7 +40,7 @@ const messageType = gql`
     }
 
     type Subscription {
-        onMessageAdded: Message
+        onMessageAdded(input: OnMessageAddedInput!): Message
     }
 `;
 

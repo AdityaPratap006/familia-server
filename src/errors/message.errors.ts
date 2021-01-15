@@ -6,6 +6,7 @@ const general = {
 
 const userInput = {
     textRequired: new CustomError(CustomErrorCodes.STATUS_400_BAD_INPUT, `text is required`),
+    textTooLong: new CustomError(CustomErrorCodes.STATUS_400_BAD_INPUT, `text is too long`),
     fromRequired: new CustomError(CustomErrorCodes.STATUS_400_BAD_INPUT, `from is required`),
     toRequired: new CustomError(CustomErrorCodes.STATUS_400_BAD_INPUT, `to is required`),
     familyRequired: new CustomError(CustomErrorCodes.STATUS_400_BAD_INPUT, `family is required`),

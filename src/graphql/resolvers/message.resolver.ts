@@ -8,7 +8,10 @@ import { MessageDoc } from '../../models/message.model';
 import { compareMongoDocumentIds } from '../../utils/db';
 import { MembershipValidators, UserValidators } from '../validators';
 import MessageService from '../../services/message.service';
-
+import { LikeEvents } from '../events/like.events';
+import { pubsub } from '../helpers/pubsub';
+import { UserDoc } from '../../models/user.model';
+import { MessageEvents } from '../events/message.events';
 interface AllChatMessagesArgs {
     input: {
         familyId: string;
@@ -25,6 +28,19 @@ interface CreateMessageArgs {
         text: string;
     };
 }
+
+interface OnMessageAddedArgs {
+    input: {
+        familyId: string;
+        from: string;
+        to: string;
+    };
+}
+
+interface OnMessageAddedPayload {
+    onMessageAdded: MessageDoc;
+}
+
 
 const allChatMessages: IFieldResolver<any, ContextAttributes, AllChatMessagesArgs, Promise<MessageDoc[]>> = async (source, args, context) => {
     const { req } = context;
@@ -80,11 +96,36 @@ const createMessage: IFieldResolver<any, ContextAttributes, CreateMessageArgs, P
             to: to,
             text: text,
         });
+
+        pubsub.publish(MessageEvents.ON_MESSAGE_ADDED, {
+            onMessageAdded: message,
+        });
+
         return message;
     } catch (error) {
         throw getGraphqlError(error);
     }
 }
+
+const onMessageAddedSubscription: IFieldResolverPrimitive<any, SubscriptionContext, OnMessageAddedArgs> = async (source, args, context) => {
+    return withFilter(
+        () => pubsub.asyncIterator([MessageEvents.ON_MESSAGE_ADDED]),
+        (payload: OnMessageAddedPayload, variables: OnMessageAddedArgs) => {
+            const fromUser = payload.onMessageAdded.from as UserDoc;
+            const toUser = payload.onMessageAdded.to as UserDoc;
+            const familyId = payload.onMessageAdded.family as string;
+
+            const { input: { familyId: inputFamilyId, from, to } } = variables;
+
+            const isAMatch = (compareMongoDocumentIds(fromUser._id, from) || compareMongoDocumentIds(fromUser._id, to))
+                && (compareMongoDocumentIds(toUser._id, to) || compareMongoDocumentIds(toUser._id, from))
+                && compareMongoDocumentIds(familyId, inputFamilyId);
+
+            return isAMatch;
+        }
+    )(source, args, context);
+}
+
 
 const messageResolverMap: IResolvers = {
     DateTime: DateTimeResolver,
@@ -95,7 +136,9 @@ const messageResolverMap: IResolvers = {
         createMessage,
     },
     Subscription: {
-
+        onMessageAdded: {
+            subscribe: onMessageAddedSubscription,
+        },
     },
 };
 
