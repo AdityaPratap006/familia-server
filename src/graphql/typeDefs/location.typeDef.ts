@@ -20,12 +20,16 @@ const locationType = gql`
         longitude: Float!
     }
 
+    input GetMemberLocationsInput {
+        familyId: String!
+    }
+
     type Mutation {
         updateUserLocation(input: UpdateUserLocationInput!): UserLocation!
     }
 
     type Query {
-       memberLocations: [UserLocation!]!
+       memberLocations(input: GetMemberLocationsInput!): [UserLocation!]!
     }
 `;
 

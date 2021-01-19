@@ -9,11 +9,19 @@ import { LocationDoc } from '../../models/location.model';
 import { getGraphqlError, UserErrors } from '../../errors';
 import UserService from '../../services/user.service';
 import { LocationErrors } from '../../errors';
+import { MembershipValidators, UserValidators } from '../validators';
+import MembershipService from '../../services/membership.service';
 
 interface UpdateUserLocationArgs {
     input: {
         latitude: number;
         longitude: number;
+    };
+}
+
+interface GetUserLocationArgs {
+    input: {
+        familyId: string;
     };
 }
 
@@ -44,9 +52,37 @@ const updateUserLocation: IFieldResolver<any, ContextAttributes, UpdateUserLocat
     }
 }
 
+const memberLocations: IFieldResolver<any, ContextAttributes, GetUserLocationArgs, Promise<LocationDoc[]>> = async (source, args, context) => {
+    const { req } = context;
+    const { input: { familyId } } = args;
+    const userAuthRecord = await authCheck(req);
+    const requestingUser = await UserValidators.checkIfUserExists(userAuthRecord);
+    await MembershipValidators.checkIfUserBelongsToFamily(familyId, requestingUser.id);
+
+    let familyMembers: UserDoc[];
+    try {
+        familyMembers = await MembershipService.getMembersOfAFamily(familyId);
+    } catch (error) {
+        throw getGraphqlError(error);
+    }
+
+    try {
+        const locationsList = await Promise.all(familyMembers.map(async (member) => {
+            const location = await LocationService.getUserLocation(member.id);
+            return location;
+        }));
+
+        return locationsList.filter(loc => loc !== null) as LocationDoc[];
+    } catch (error) {
+        throw getGraphqlError(error);
+    }
+}
+
 const locationResolverMap: IResolvers = {
     DateTime: DateTimeResolver,
-
+    Query: {
+        memberLocations,
+    },
     Mutation: {
         updateUserLocation,
     }

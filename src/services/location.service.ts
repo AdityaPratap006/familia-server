@@ -7,6 +7,18 @@ interface UserLocationInput {
 }
 
 export default class LocationService {
+    static getUserLocation = async (userId: string) => {
+        try {
+            const location = await Location.findOne({
+                user: userId,
+            });
+            await location?.populate('user').execPopulate();
+            return location;
+        } catch (error) {
+            throw internalServerError;
+        }
+    }
+
     static updateUserLocation = async (userId: string, { latitude, longitude }: UserLocationInput) => {
         try {
             const location = await Location.findOne({
