@@ -5,3 +5,4 @@ export * from './invite.errors';
 export * from './membership.errors';
 export * from './post.errors';
 export * from './message.errors';
+export * from './location.errors';
