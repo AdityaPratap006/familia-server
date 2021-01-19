@@ -9,6 +9,7 @@ const locationType = gql`
     }
 
     type UserLocation {
+        _id: ID!
         location: Location!
         user: User!
         createdAt: DateTime!
