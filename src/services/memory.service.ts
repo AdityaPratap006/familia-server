@@ -11,7 +11,7 @@ interface CreateMemoryParams {
 export default class MemoryService {
     static getAllMemories = async () => {
         try {
-            const memories = await Memory.find();
+            const memories = await Memory.find().populate('family');
             return memories;
         } catch (error) {
             throw internalServerError;
@@ -22,7 +22,7 @@ export default class MemoryService {
         try {
             const memories = await Memory.find({
                 family: familyId,
-            });
+            }).populate('family');
             return memories;
         } catch (error) {
             throw internalServerError;
@@ -40,6 +40,7 @@ export default class MemoryService {
             });
 
             await newMemory.save();
+            await newMemory.populate('family').execPopulate();
             return newMemory;
         } catch (error) {
             throw internalServerError;
