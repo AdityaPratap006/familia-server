@@ -4,20 +4,8 @@ import chalk from 'chalk';
 import util from 'util';
 import { SocketIOEvents } from './ioEvents/socket.ioEvents';
 import { UserIOEvents } from './ioEvents/user.ioEvents';
-import { VideoCallIOEvents } from './ioEvents/videoCall.ioEvents';
 import { RoomIOEvents } from './ioEvents/room.ioEvents';
 
-// const usersMap = new Map<string, string>();
-
-// const getObjectFromMap = (map: Map<string, any>) => {
-//     const obj: Record<string, any> = {};
-
-//     map.forEach((value, key) => {
-//         obj[key] = value;
-//     });
-
-//     return obj;
-// }
 
 interface UserSocket {
     userId: string;
