@@ -12,6 +12,7 @@ import path from 'path';
 import { contextFunction } from './graphql/helpers/context';
 import { connectToDatabase } from './utils/db';
 import { getVerifiedUser } from './graphql/helpers/auth';
+import { initIOServer } from './io';
 
 dotenvConfig();
 
@@ -69,7 +70,7 @@ const startServer = async () => {
         await connectToDatabase();
 
         const PORT = process.env.PORT;
-        mainServer.listen(PORT, () => {
+        const httpServer = mainServer.listen(PORT, () => {
             const localURL = `http://localhost:${PORT}`;
             console.log(`Server is ready at ${chalk.blueBright(localURL)}`);
 
@@ -79,6 +80,9 @@ const startServer = async () => {
             const subscriptionsURL = `${localURL}${apolloServer.subscriptionsPath}`;
             console.log(`GraphQL Subscriptions are ready at ${chalk.cyan(subscriptionsURL)}\n`);
         });
+
+        initIOServer(httpServer);
+
     } catch (error) {
         console.log(chalk.red(`Could not start server: ${error.message}`));
     }
