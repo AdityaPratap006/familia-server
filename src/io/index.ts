@@ -5,76 +5,10 @@ import util from 'util';
 import { SocketIOEvents } from './ioEvents/socket.ioEvents';
 import { UserIOEvents } from './ioEvents/user.ioEvents';
 import { RoomIOEvents } from './ioEvents/room.ioEvents';
+import { SignalIOEvents } from './ioEvents/signal.ioEvents';
 
-
-interface UserSocket {
-    userId: string;
-    socketId: string;
-}
-
-const videoCallRoomMap = new Map<string, UserSocket[]>();
-
-const addUserToRoom = (socket: Socket, roomId: string, userId: string) => {
-    const socketId = socket.id;
-
-    socket.join(roomId);
-    socket.to(roomId).broadcast.emit(UserIOEvents.USER_CONNECTED, userId);
-
-    if (videoCallRoomMap.has(roomId)) {
-        const userSocketList = videoCallRoomMap.get(roomId) || [];
-        const userExists = !!userSocketList.find(userSocket => userSocket.socketId === socketId);
-
-        if (!userExists) {
-            userSocketList.push({
-                userId,
-                socketId,
-            });
-        }
-
-        videoCallRoomMap.set(roomId, userSocketList);
-    } else {
-        videoCallRoomMap.set(roomId, [{ socketId, userId }]);
-    }
-
-    console.table(util.inspect(videoCallRoomMap, { depth: 10 }));
-}
-
-const removeSocketFromRoom = (socketId: string) => {
-    let targetFound = false;
-
-    videoCallRoomMap.forEach((userSockets, roomId) => {
-        if (targetFound) {
-            return;
-        }
-
-        const sockets = userSockets.filter(userSocket => userSocket.socketId !== socketId);
-        videoCallRoomMap.set(roomId, sockets);
-    });
-
-    console.table(util.inspect(videoCallRoomMap, { depth: 10 }));
-}
-
-const getRoomAndUserWhereSocketHasJoined = (socketId: string) => {
-    let targetFound = false;
-    let targetRoomId = '';
-    let targetUserId = '';
-    videoCallRoomMap.forEach((userSockets, roomId) => {
-        if (targetFound) {
-            return;
-        }
-
-        const sockets = userSockets.map(userSocket => userSocket.socketId);
-
-        if (sockets.includes(socketId)) {
-            targetRoomId = roomId;
-            const userId = userSockets.find(userSocket => userSocket.socketId === socketId)?.userId;
-            targetUserId = userId || '';
-            targetFound = true;
-        }
-    });
-
-    return { targetRoomId, targetUserId };
-}
+const usersByRoomMap = new Map<string, string[]>();
+const socketToRoomMap = new Map<string, string>();
 
 export const initIOServer = (server: http.Server) => {
     console.log(chalk.hex(`#9932CC`)(`Starting socketIO server...`));
@@ -86,34 +20,52 @@ export const initIOServer = (server: http.Server) => {
 
     io.on(SocketIOEvents.CONNECTION, (socket: Socket) => {
 
-        socket.on(RoomIOEvents.JOIN_ROOM, (roomId: string, userId: string) => {
-            console.log(chalk.green(`socketId: ${socket.id}, userId: ${userId} joined room ${roomId}`));
-            addUserToRoom(socket, roomId, userId);
+        socket.on(RoomIOEvents.JOIN_ROOM, (roomId: string) => {
+            console.log(chalk.green(`socketId: ${socket.id} joined room ${roomId}`));
+
+            const room = usersByRoomMap.get(roomId);
+            if (room) {
+                const numOfUsers = room.length;
+                if (numOfUsers === 2) {
+                    socket.emit(RoomIOEvents.ROOM_FULL);
+                    return;
+                }
+
+                room.push(socket.id);
+            } else {
+                usersByRoomMap.set(roomId, [socket.id]);
+            }
+
+            socketToRoomMap.set(socket.id, roomId);
+            const usersInThisRoom = usersByRoomMap.get(roomId)?.filter(id => id !== socket.id) || [];
+            socket.emit(UserIOEvents.ALL_USERS, usersInThisRoom);
+            console.log(util.inspect({ usersByRoomMap, socketToRoomMap }));
         });
 
 
         socket.on(SocketIOEvents.DISCONNECT, () => {
-
             console.log(chalk.red(socket.id, ' disconnected!'));
-
-            const { targetRoomId, targetUserId } = getRoomAndUserWhereSocketHasJoined(socket.id);
-
-            socket.broadcast.emit(UserIOEvents.USER_DISCONNECTED, targetUserId);
-
-            io.sockets.in(targetRoomId).emit(UserIOEvents.USER_DISCONNECTED, targetUserId);
-
-            removeSocketFromRoom(socket.id);
+            const roomId = socketToRoomMap.get(socket.id);
+            if (roomId) {
+                let room = usersByRoomMap.get(roomId);
+                if (room) {
+                    room = room.filter(id => id !== socket.id);
+                    usersByRoomMap.set(roomId, room);
+                    socketToRoomMap.delete(socket.id);
+                }
+                socket.broadcast.emit(UserIOEvents.USER_DISCONNECTED, socket.id);
+            }
+            console.log(util.inspect({ usersByRoomMap, socketToRoomMap }));
         });
 
-        // socket.on(VideoCallIOEvents.CALL_USER, (data) => {
-        //     io.to(data.userToCall).emit(VideoCallIOEvents.INCOMING_CALL, {
-        //         signal: data.signalData,
-        //         from: data.from,
-        //     });
-        // });
+        socket.on(SignalIOEvents.SENDING_SIGNAL, payload => {
+            const { userToSignal, signal, callerID } = payload;
+            io.to(userToSignal).emit(UserIOEvents.USER_JOINED, { signal, callerID });
+        });
 
-        // socket.on(VideoCallIOEvents.ACCEPT_CALL, (data) => {
-        //     io.to(data.to).emit(VideoCallIOEvents.CALL_ACCEPTED, data.signal);
-        // });
+        socket.on(SignalIOEvents.RETURNING_SIGNAL, payload => {
+            const { callerID, signal } = payload;
+            io.to(callerID).emit(SignalIOEvents.RECEIVING_RETURNED_SIGNAL, { signal, id: socket.id });
+        });
     });
 }

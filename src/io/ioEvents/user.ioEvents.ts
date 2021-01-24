@@ -3,4 +3,5 @@ export enum UserIOEvents {
     ALL_USERS = 'allUsers',
     USER_CONNECTED = 'user-connected',
     USER_DISCONNECTED = 'user-disconnected',
+    USER_JOINED = 'user-joined',
 }

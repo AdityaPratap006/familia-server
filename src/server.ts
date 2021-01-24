@@ -9,7 +9,6 @@ import { loadFilesSync } from '@graphql-tools/load-files';
 import { mergeTypeDefs, mergeResolvers } from '@graphql-tools/merge';
 import { GraphQLSchema } from 'graphql';
 import path from 'path';
-import { ExpressPeerServer } from 'peer';
 import { contextFunction } from './graphql/helpers/context';
 import { connectToDatabase } from './utils/db';
 import { getVerifiedUser } from './graphql/helpers/auth';
@@ -71,14 +70,6 @@ const startServer = async () => {
         await connectToDatabase();
 
         const PORT = process.env.PORT;
-
-        const PEER_PORT: number = +`${PORT}` + 1;
-        const signalServer = http.createServer(app).listen(PEER_PORT);
-
-        const peerServer = ExpressPeerServer(signalServer);
-
-        app.use('/peer', peerServer);
-
         const httpServer = mainServer.listen(PORT, () => {
             const localURL = `http://localhost:${PORT}`;
             console.log(`Server is ready at ${chalk.blueBright(localURL)}`);
@@ -88,8 +79,6 @@ const startServer = async () => {
 
             const subscriptionsURL = `${localURL}${apolloServer.subscriptionsPath}`;
             console.log(`GraphQL Subscriptions are ready at ${chalk.cyan(subscriptionsURL)}\n`);
-
-            console.log(`Peer server running on PORT: `, chalk.greenBright(`${PEER_PORT}`));
         });
 
         initIOServer(httpServer);

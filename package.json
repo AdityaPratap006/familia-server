@@ -44,7 +44,6 @@
     "graphql-tools": "^7.0.1",
     "mongoose": "^5.10.15",
     "mongoose-jumblator": "^1.2.4",
-    "peer": "^0.6.1",
     "socket.io": "^3.1.0"
   }
 }
