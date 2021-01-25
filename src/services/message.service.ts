@@ -1,4 +1,4 @@
-import { Message, MessageAttributes } from '../models/message.model';
+import { Message, MessageAttributes, MessageDoc } from '../models/message.model';
 import { internalServerError, MessageErrors } from '../errors';
 
 export default class MessageService {
@@ -42,6 +42,18 @@ export default class MessageService {
         }
     }
 
+    static getMessageById = async (messageId: string) => {
+        try {
+            const message = await Message.findById(messageId)
+                .populate('from')
+                .populate('to');
+
+            return message;
+        } catch (error) {
+            throw internalServerError;
+        }
+    }
+
     static createNewMessage = async (attrs: MessageAttributes) => {
 
         const { family, from, text, to } = attrs;
@@ -78,6 +90,24 @@ export default class MessageService {
                 .execPopulate();
 
             return messageResult;
+        } catch (error) {
+            throw internalServerError;
+        }
+    }
+
+    static deleteMessageById = async (messageId: string) => {
+        try {
+            const messageToBeDeleted = await Message.findById(messageId);
+
+            if (!messageToBeDeleted) {
+                throw MessageErrors.general.messageNotFound;
+            }
+
+            const messageData: MessageDoc = await messageToBeDeleted.populate('from').populate('to').execPopulate();
+
+            await Message.findByIdAndDelete(messageId);
+
+            return messageData;
         } catch (error) {
             throw internalServerError;
         }

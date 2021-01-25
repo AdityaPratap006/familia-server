@@ -14,6 +14,7 @@ const userInput = {
 
 const forbidden = {
     cannotAccessChats: new CustomError(CustomErrorCodes.STATUS_403_FORBIDDEN, `you cannot access these chats`),
+    cannotDeleteMessage: new CustomError(CustomErrorCodes.STATUS_403_FORBIDDEN, `you cannot delete this message`),
 }
 
 export const MessageErrors = {

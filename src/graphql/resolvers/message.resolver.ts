@@ -8,7 +8,6 @@ import { MessageDoc } from '../../models/message.model';
 import { compareMongoDocumentIds } from '../../utils/db';
 import { MembershipValidators, UserValidators } from '../validators';
 import MessageService from '../../services/message.service';
-import { LikeEvents } from '../events/like.events';
 import { pubsub } from '../helpers/pubsub';
 import { UserDoc } from '../../models/user.model';
 import { MessageEvents } from '../events/message.events';
@@ -27,6 +26,12 @@ interface CreateMessageArgs {
         to: string;
         text: string;
     };
+}
+
+interface DeleteMessageArgs {
+    input: {
+        messageId: string;
+    }
 }
 
 interface OnMessageAddedArgs {
@@ -107,6 +112,37 @@ const createMessage: IFieldResolver<any, ContextAttributes, CreateMessageArgs, P
     }
 }
 
+const deleteMessage: IFieldResolver<any, ContextAttributes, DeleteMessageArgs, Promise<MessageDoc>> = async (source, args, context) => {
+    const { req } = context;
+    const userAuthRecord = await authCheck(req);
+
+    let requestingUser = await UserValidators.checkIfUserExists(userAuthRecord);
+
+    const { input: { messageId } } = args;
+
+    try {
+        const message = await MessageService.getMessageById(messageId);
+        if (!message) {
+            throw MessageErrors.general.messageNotFound;
+        }
+
+        const messageSender = message.from as UserDoc;
+
+        if (!compareMongoDocumentIds(messageSender.id, requestingUser.id)) {
+            throw MessageErrors.forbidden.cannotDeleteMessage;
+        }
+    } catch (error) {
+        throw getGraphqlError(error);
+    }
+
+    try {
+        const deletedMessage = await MessageService.deleteMessageById(messageId);
+        return deletedMessage;
+    } catch (error) {
+        throw getGraphqlError(error);
+    }
+}
+
 const onMessageAddedSubscription: IFieldResolverPrimitive<any, SubscriptionContext, OnMessageAddedArgs> = async (source, args, context) => {
     return withFilter(
         () => pubsub.asyncIterator([MessageEvents.ON_MESSAGE_ADDED]),
@@ -134,6 +170,7 @@ const messageResolverMap: IResolvers = {
     },
     Mutation: {
         createMessage,
+        deleteMessage,
     },
     Subscription: {
         onMessageAdded: {

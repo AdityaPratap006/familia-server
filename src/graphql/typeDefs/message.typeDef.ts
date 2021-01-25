@@ -30,6 +30,10 @@ const messageType = gql`
         to: String!
     }
 
+    input DeleteMessageInput {
+        messageId: String!
+    }
+
     type Query {
         totalMessages: Int!
         allChatMessages(input: AllChatMessagesInput!): [Message!]!
@@ -37,6 +41,7 @@ const messageType = gql`
 
     type Mutation {
         createMessage(input: CreateMessageInput!): Message!
+        deleteMessage(input: DeleteMessageInput!): Message!
     }
 
     type Subscription {
