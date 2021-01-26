@@ -1,6 +1,7 @@
 import { Post, PostAttributes, PostDoc } from '../models/post.model';
 import { internalServerError, PostErrors } from '../errors';
 import { cloudinary } from '../utils/cloudinary';
+import LikeService from './like.service';
 
 interface CreatePostInput {
     title: string;
@@ -129,6 +130,7 @@ export default class PostService {
                 }
             }
 
+            await LikeService.deleteAllLikesOnPost(postId);
             await Post.findByIdAndDelete(postId);
 
             return postData;

@@ -87,4 +87,12 @@ export default class LikeService {
             throw internalServerError;
         }
     }
+
+    static deleteAllLikesOnPost = async (postId: string) => {
+        try {
+            await Like.deleteMany({ post: postId });
+        } catch (error) {
+            throw internalServerError;
+        }
+    }
 }
