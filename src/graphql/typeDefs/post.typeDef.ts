@@ -49,6 +49,7 @@ const postType = gql`
 
     type Subscription {
         onPostAdded: Post
+        onPostDeleted: Post
     }
 `;
 

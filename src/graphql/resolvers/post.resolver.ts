@@ -197,6 +197,10 @@ const postAddedSubscription: IFieldResolverPrimitive<any, SubscriptionContext, a
     return pubsub.asyncIterator([PostEvents.POST_ADDED]);
 }
 
+const postDeletedSubscription: IFieldResolverPrimitive<any, SubscriptionContext, any> = (source, args, context) => {
+    return pubsub.asyncIterator([PostEvents.POST_DELETED]);
+}
+
 const postResolverMap: IResolvers = {
     DateTime: DateTimeResolver,
     Query: {
@@ -210,6 +214,9 @@ const postResolverMap: IResolvers = {
     Subscription: {
         onPostAdded: {
             subscribe: postAddedSubscription,
+        },
+        onPostDeleted: {
+            subscribe: postDeletedSubscription,
         },
     },
 };
