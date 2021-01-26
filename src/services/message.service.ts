@@ -2,6 +2,37 @@ import { Message, MessageAttributes, MessageDoc } from '../models/message.model'
 import { internalServerError, MessageErrors } from '../errors';
 
 export default class MessageService {
+    static getTotalMessageCount = async () => {
+        try {
+            const count = await Message.find().estimatedDocumentCount().exec();
+            return count;
+        } catch (error) {
+            throw internalServerError;
+        }
+    }
+
+    static getChatMessagesCount = async (from: string, to: string, familyId: string) => {
+        try {
+            const count = await Message.find()
+                .or([
+                    {
+                        from: from,
+                        to: to,
+                        family: familyId,
+                    },
+                    {
+                        from: to,
+                        to: from,
+                        family: familyId,
+                    }
+                ]).countDocuments().exec();
+
+            return count;
+        } catch (error) {
+            throw internalServerError;
+        }
+    }
+
     static getAllMessages = async () => {
         try {
             const messages = await Message.find().sort({ createdAt: 1 })

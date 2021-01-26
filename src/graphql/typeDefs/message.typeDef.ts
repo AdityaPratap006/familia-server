@@ -42,6 +42,7 @@ const messageType = gql`
 
     type Query {
         totalMessages: Int!
+        totalChatMessages(input: AllChatMessagesInput!): Int!
         allChatMessages(input: AllChatMessagesInput!): [Message!]!
     }
 

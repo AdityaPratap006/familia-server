@@ -58,6 +58,45 @@ interface OnMessageDeletedPayload {
     onMessageDeleted: MessageDoc;
 }
 
+const totalMessages: IFieldResolver<any, ContextAttributes, any, Promise<number>> = async (source, args, context) => {
+    try {
+        const count = await MessageService.getTotalMessageCount();
+        return count;
+    } catch (error) {
+        throw getGraphqlError(error);
+    }
+}
+
+const totalChatMessages: IFieldResolver<any, ContextAttributes, AllChatMessagesArgs, Promise<number>> = async (source, args, context) => {
+    const { req } = context;
+    const userAuthRecord = await authCheck(req);
+
+    let requestingUser = await UserValidators.checkIfUserExists(userAuthRecord);
+
+    const { input: { familyId, from, to } } = args;
+
+    if (from.toString() === to.toString()) {
+        throw getGraphqlError(MessageErrors.forbidden.cannotAccessChats);
+    }
+
+    if (!compareMongoDocumentIds(from, requestingUser._id) && !compareMongoDocumentIds(to, requestingUser._id)) {
+        throw getGraphqlError(MessageErrors.forbidden.cannotAccessChats);
+    }
+
+    try {
+        await MembershipValidators.checkIfUserBelongsToFamily(familyId, from);
+        await MembershipValidators.checkIfUserBelongsToFamily(familyId, to);
+    } catch (error) {
+        throw getGraphqlError(MessageErrors.forbidden.cannotAccessChats);
+    }
+
+    try {
+        const count = await MessageService.getChatMessagesCount(from, to, familyId);
+        return count;
+    } catch (error) {
+        throw getGraphqlError(error);
+    }
+}
 
 const allChatMessages: IFieldResolver<any, ContextAttributes, AllChatMessagesArgs, Promise<MessageDoc[]>> = async (source, args, context) => {
     const { req } = context;
@@ -201,6 +240,8 @@ const onMessageDeletedSubscription: IFieldResolverPrimitive<any, SubscriptionCon
 const messageResolverMap: IResolvers = {
     DateTime: DateTimeResolver,
     Query: {
+        totalMessages,
+        totalChatMessages,
         allChatMessages,
     },
     Mutation: {
