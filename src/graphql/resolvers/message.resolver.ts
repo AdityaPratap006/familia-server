@@ -46,6 +46,18 @@ interface OnMessageAddedPayload {
     onMessageAdded: MessageDoc;
 }
 
+interface OnMessageDeletedArgs {
+    input: {
+        familyId: string;
+        from: string;
+        to: string;
+    };
+}
+
+interface OnMessageDeletedPayload {
+    onMessageDeleted: MessageDoc;
+}
+
 
 const allChatMessages: IFieldResolver<any, ContextAttributes, AllChatMessagesArgs, Promise<MessageDoc[]>> = async (source, args, context) => {
     const { req } = context;
@@ -137,6 +149,11 @@ const deleteMessage: IFieldResolver<any, ContextAttributes, DeleteMessageArgs, P
 
     try {
         const deletedMessage = await MessageService.deleteMessageById(messageId);
+
+        pubsub.publish(MessageEvents.ON_MESSAGE_DELETED, {
+            onMessageDeleted: deletedMessage,
+        });
+
         return deletedMessage;
     } catch (error) {
         throw getGraphqlError(error);
@@ -162,6 +179,24 @@ const onMessageAddedSubscription: IFieldResolverPrimitive<any, SubscriptionConte
     )(source, args, context);
 }
 
+const onMessageDeletedSubscription: IFieldResolverPrimitive<any, SubscriptionContext, OnMessageDeletedArgs> = async (source, args, context) => {
+    return withFilter(
+        () => pubsub.asyncIterator([MessageEvents.ON_MESSAGE_DELETED]),
+        (payload: OnMessageDeletedPayload, variables: OnMessageDeletedArgs) => {
+            const fromUser = payload.onMessageDeleted.from as UserDoc;
+            const toUser = payload.onMessageDeleted.to as UserDoc;
+            const familyId = payload.onMessageDeleted.family as string;
+
+            const { input: { familyId: inputFamilyId, from, to } } = variables;
+
+            const isAMatch = (compareMongoDocumentIds(fromUser._id, from) || compareMongoDocumentIds(fromUser._id, to))
+                && (compareMongoDocumentIds(toUser._id, to) || compareMongoDocumentIds(toUser._id, from))
+                && compareMongoDocumentIds(familyId, inputFamilyId);
+
+            return isAMatch;
+        }
+    )(source, args, context);
+}
 
 const messageResolverMap: IResolvers = {
     DateTime: DateTimeResolver,
@@ -176,6 +211,9 @@ const messageResolverMap: IResolvers = {
         onMessageAdded: {
             subscribe: onMessageAddedSubscription,
         },
+        onMessageDeleted: {
+            subscribe: onMessageDeletedSubscription,
+        }
     },
 };
 

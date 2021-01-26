@@ -24,7 +24,13 @@ const messageType = gql`
         to: String!
     }
 
-    input  OnMessageAddedInput {
+    input OnMessageAddedInput {
+        familyId: String!
+        from: String!
+        to: String!
+    }
+
+    input OnMessageDeletedInput {
         familyId: String!
         from: String!
         to: String!
@@ -46,6 +52,7 @@ const messageType = gql`
 
     type Subscription {
         onMessageAdded(input: OnMessageAddedInput!): Message
+        onMessageDeleted(input: OnMessageDeletedInput!): Message
     }
 `;
 
