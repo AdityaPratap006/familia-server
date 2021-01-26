@@ -32,6 +32,10 @@ const postType = gql`
         familyId: String!
     }
 
+    input DeletePostInput {
+        postId: String!
+    }
+
     type Query {
         totalPosts: Int!
         allPosts(input: AllPostsInput!): [Post!]!
@@ -40,6 +44,7 @@ const postType = gql`
 
     type Mutation {
         createPost(input: CreatePostInput!): Post!
+        deletePost(input: DeletePostInput!): Post!
     }
 
     type Subscription {

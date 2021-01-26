@@ -13,6 +13,7 @@ import UserService from '../../services/user.service';
 import MembershipService from '../../services/membership.service';
 import { pubsub } from '../helpers/pubsub';
 import { PostEvents } from '../events/post.events';
+import { compareMongoDocumentIds } from '../../utils/db';
 
 interface CreatePostArgs {
     input: {
@@ -26,6 +27,12 @@ interface CreatePostArgs {
 interface AllPostsInFamilyArgs {
     input: {
         familyId: string;
+    };
+}
+
+interface DeletePostArgs {
+    input: {
+        postId: string;
     };
 }
 
@@ -97,6 +104,59 @@ const createPost: IFieldResolver<any, ContextAttributes, CreatePostArgs, Promise
     }
 }
 
+const deletePost: IFieldResolver<any, ContextAttributes, DeletePostArgs, Promise<PostDoc>> = async (source, args, context) => {
+    const { req } = context;
+    const userAuthRecord = await authCheck(req);
+
+    let requestingUser: UserDoc;
+    try {
+        const user = await UserService.getOneUserByAuthId(userAuthRecord.uid);
+        if (!user) {
+            throw UserErrors.general.userNotFound;
+        }
+        requestingUser = user;
+    } catch (error) {
+        throw getGraphqlError(error);
+    }
+
+    const { input: { postId } } = args;
+
+    if (!postId || postId.trim() === '') {
+        throw getGraphqlError(PostErrors.general.postNotFound);
+    }
+
+    // check if requesting user is the author of the post
+    try {
+        const post = await PostService.getPostById(postId);
+        if (!post) {
+            throw PostErrors.general.postNotFound;
+        }
+        const postAuthor = post.author as UserDoc;
+        const isAuthor = compareMongoDocumentIds(requestingUser.id, postAuthor.id);
+        if (!isAuthor) {
+            throw PostErrors.forbidden.cannotDelete;
+        }
+    } catch (error) {
+        throw getGraphqlError(error);
+    }
+
+    try {
+        const deletedPost = await PostService.deletePost(postId);
+
+        if (!deletedPost) {
+            throw PostErrors.general.postNotFound;
+        }
+
+        pubsub.publish(PostEvents.POST_DELETED, {
+            onPostDeleted: deletedPost,
+        });
+
+        return deletedPost;
+    } catch (error) {
+        throw getGraphqlError(error);
+    }
+}
+
 const allPostsInFamily: IFieldResolver<any, ContextAttributes, AllPostsInFamilyArgs, Promise<PostDoc[]>> = async (source, args, context) => {
     const { req } = context;
     const userAuthRecord = await authCheck(req);
@@ -145,6 +205,7 @@ const postResolverMap: IResolvers = {
     },
     Mutation: {
         createPost,
+        deletePost,
     },
     Subscription: {
         onPostAdded: {

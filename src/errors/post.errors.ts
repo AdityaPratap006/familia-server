@@ -11,6 +11,7 @@ const userInput = {
 
 const forbidden = {
     userNotAMember: new CustomError(CustomErrorCodes.STATUS_403_FORBIDDEN, `sorry you cannot post in a family you don't belong to`),
+    cannotDelete: new CustomError(CustomErrorCodes.STATUS_403_FORBIDDEN, `you cannot delete this post`),
 }
 
 export const PostErrors = {

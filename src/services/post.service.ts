@@ -1,5 +1,5 @@
-import { Post, PostAttributes } from '../models/post.model';
-import { internalServerError } from '../errors';
+import { Post, PostAttributes, PostDoc } from '../models/post.model';
+import { internalServerError, PostErrors } from '../errors';
 import { cloudinary } from '../utils/cloudinary';
 
 interface CreatePostInput {
@@ -22,6 +22,21 @@ export default class PostService {
                 }
             });
             return posts;
+        } catch (error) {
+            throw internalServerError;
+        }
+    }
+
+    static getPostById = async (postId: string) => {
+        try {
+            const post = await Post.findById(postId).populate('author').populate({
+                path: 'family',
+                populate: {
+                    path: 'creator',
+                    model: 'User',
+                }
+            });
+            return post;
         } catch (error) {
             throw internalServerError;
         }
@@ -87,6 +102,38 @@ export default class PostService {
             return newPost;
         } catch (error) {
             internalServerError;
+        }
+    }
+
+    static deletePost = async (postId: string) => {
+        try {
+            const postToBeDeleted = await Post.findById(postId);
+
+            if (!postToBeDeleted) {
+                throw PostErrors.general.postNotFound;
+            }
+
+            const postData: PostDoc = await postToBeDeleted.populate('author').populate({
+                path: 'family',
+                populate: {
+                    path: 'creator',
+                    model: 'User',
+                }
+            }).execPopulate();
+
+            if (postData.image && postData.image.public_id) {
+                try {
+                    await cloudinary.uploader.destroy(postData.image.public_id);
+                } catch (error) {
+                    throw internalServerError;
+                }
+            }
+
+            await Post.findByIdAndDelete(postId);
+
+            return postData;
+        } catch (error) {
+            throw internalServerError;
         }
     }
 }
