@@ -11,11 +11,13 @@ import MessageService from '../../services/message.service';
 import { pubsub } from '../helpers/pubsub';
 import { UserDoc } from '../../models/user.model';
 import { MessageEvents } from '../events/message.events';
+
 interface AllChatMessagesArgs {
     input: {
         familyId: string;
         from: string;
         to: string;
+        skip?: number;
     };
 }
 
@@ -104,7 +106,7 @@ const allChatMessages: IFieldResolver<any, ContextAttributes, AllChatMessagesArg
 
     let requestingUser = await UserValidators.checkIfUserExists(userAuthRecord);
 
-    const { input: { familyId, from, to } } = args;
+    const { input: { familyId, from, to, skip } } = args;
 
     if (from.toString() === to.toString()) {
         throw getGraphqlError(MessageErrors.forbidden.cannotAccessChats);
@@ -122,7 +124,7 @@ const allChatMessages: IFieldResolver<any, ContextAttributes, AllChatMessagesArg
     }
 
     try {
-        const messages = await MessageService.getChatMessages(from, to, familyId);
+        const messages = await MessageService.getChatMessages(from, to, familyId, skip || 0);
         return messages;
     } catch (error) {
         throw getGraphqlError(error);

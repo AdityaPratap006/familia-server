@@ -46,7 +46,9 @@ export default class MessageService {
         }
     }
 
-    static getChatMessages = async (from: string, to: string, familyId: string) => {
+    static getChatMessages = async (from: string, to: string, familyId: string, skip: number) => {
+        const messagesSlotSize = 50;
+
         try {
             const messages = await Message.find()
                 .or([
@@ -61,7 +63,9 @@ export default class MessageService {
                         family: familyId,
                     }
                 ])
-                .sort({ createdAt: 1 })
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(messagesSlotSize)
                 .populate('from')
                 .populate('to');
 

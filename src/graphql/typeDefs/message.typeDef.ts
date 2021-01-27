@@ -22,6 +22,7 @@ const messageType = gql`
         familyId: String!
         from: String!
         to: String!
+        skip: Int
     }
 
     input OnMessageAddedInput {
