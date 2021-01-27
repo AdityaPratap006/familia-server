@@ -46,8 +46,8 @@ export default class MessageService {
         }
     }
 
-    static getChatMessages = async (from: string, to: string, familyId: string, skip: number) => {
-        const messagesSlotSize = 50;
+    static getChatMessages = async (from: string, to: string, familyId: string, skip: number, slotSize?: number) => {
+        const messagesSlotSize = slotSize || 10;
 
         try {
             const messages = await Message.find()

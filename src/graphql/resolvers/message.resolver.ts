@@ -18,6 +18,7 @@ interface AllChatMessagesArgs {
         from: string;
         to: string;
         skip?: number;
+        slotSize?: number;
     };
 }
 
@@ -106,7 +107,7 @@ const allChatMessages: IFieldResolver<any, ContextAttributes, AllChatMessagesArg
 
     let requestingUser = await UserValidators.checkIfUserExists(userAuthRecord);
 
-    const { input: { familyId, from, to, skip } } = args;
+    const { input: { familyId, from, to, skip, slotSize } } = args;
 
     if (from.toString() === to.toString()) {
         throw getGraphqlError(MessageErrors.forbidden.cannotAccessChats);
@@ -124,7 +125,7 @@ const allChatMessages: IFieldResolver<any, ContextAttributes, AllChatMessagesArg
     }
 
     try {
-        const messages = await MessageService.getChatMessages(from, to, familyId, skip || 0);
+        const messages = await MessageService.getChatMessages(from, to, familyId, skip || 0, slotSize);
         return messages;
     } catch (error) {
         throw getGraphqlError(error);

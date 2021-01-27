@@ -23,6 +23,7 @@ const messageType = gql`
         from: String!
         to: String!
         skip: Int
+        slotSize: Int
     }
 
     input OnMessageAddedInput {
