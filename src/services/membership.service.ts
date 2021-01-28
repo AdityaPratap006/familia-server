@@ -65,7 +65,7 @@ export default class MembershipService {
             const user = result.user as UserDoc;
             const family = result.family as FamilyDoc;
 
-            console.log(chalk.blueBright(`${user.name} added to family '${family.name}'`));
+            // console.log(chalk.blueBright(`${user.name} added to family '${family.name}'`));
 
             return result;
         } catch (error) {

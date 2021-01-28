@@ -71,7 +71,7 @@ export default class MessageService {
 
             return messages;
         } catch (error) {
-            console.log(error);
+            // console.log(error);
 
             throw internalServerError;
         }

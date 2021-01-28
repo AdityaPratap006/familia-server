@@ -35,12 +35,12 @@ export default class InviteService {
             const fromUser = newInviteData.from as UserDoc;
             const toUser = newInviteData.to as UserDoc;
 
-            console.log(chalk.hex('#fc045c')(`Created new Invite`));
-            console.table({
-                family: family.id,
-                from: fromUser.id,
-                to: toUser.id,
-            });
+            // console.log(chalk.hex('#fc045c')(`Created new Invite`));
+            // console.table({
+            //     family: family.id,
+            //     from: fromUser.id,
+            //     to: toUser.id,
+            // });
 
             return newInviteData;
         } catch (error) {

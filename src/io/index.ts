@@ -11,7 +11,7 @@ const usersByRoomMap = new Map<string, string[]>();
 const socketToRoomMap = new Map<string, string>();
 
 export const initIOServer = (server: http.Server) => {
-    console.log(chalk.hex(`#9932CC`)(`Starting socketIO server...`));
+    // console.log(chalk.hex(`#9932CC`)(`Starting socketIO server...`));
     const io = new SocketServer(server, {
         cors: {
             origin: '*',
@@ -21,7 +21,7 @@ export const initIOServer = (server: http.Server) => {
     io.on(SocketIOEvents.CONNECTION, (socket: Socket) => {
 
         socket.on(RoomIOEvents.JOIN_ROOM, (roomId: string) => {
-            console.log(chalk.green(`socketId: ${socket.id} joined room ${roomId}`));
+            // console.log(chalk.green(`socketId: ${socket.id} joined room ${roomId}`));
 
             const room = usersByRoomMap.get(roomId);
             if (room) {
@@ -39,12 +39,12 @@ export const initIOServer = (server: http.Server) => {
             socketToRoomMap.set(socket.id, roomId);
             const usersInThisRoom = usersByRoomMap.get(roomId)?.filter(id => id !== socket.id) || [];
             socket.emit(UserIOEvents.ALL_USERS, usersInThisRoom);
-            console.log(util.inspect({ usersByRoomMap, socketToRoomMap }));
+            // console.log(util.inspect({ usersByRoomMap, socketToRoomMap }));
         });
 
 
         socket.on(SocketIOEvents.DISCONNECT, () => {
-            console.log(chalk.red(socket.id, ' disconnected!'));
+            // console.log(chalk.red(socket.id, ' disconnected!'));
             const roomId = socketToRoomMap.get(socket.id);
             if (roomId) {
                 let room = usersByRoomMap.get(roomId);
@@ -55,7 +55,7 @@ export const initIOServer = (server: http.Server) => {
                 }
                 socket.broadcast.emit(UserIOEvents.USER_DISCONNECTED, socket.id);
             }
-            console.log(util.inspect({ usersByRoomMap, socketToRoomMap }));
+            // console.log(util.inspect({ usersByRoomMap, socketToRoomMap }));
         });
 
         socket.on(SignalIOEvents.SENDING_SIGNAL, payload => {

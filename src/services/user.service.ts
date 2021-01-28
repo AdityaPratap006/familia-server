@@ -72,7 +72,7 @@ export default class UserService {
             });
 
             await newUser.save();
-            console.log(chalk.green('created new user'));
+            // console.log(chalk.green('created new user'));
 
             return newUser;
         } catch (error) {

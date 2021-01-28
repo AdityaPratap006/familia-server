@@ -39,7 +39,7 @@ const profile: IFieldResolver<any, ContextAttributes, CreateUserArgs, Promise<Us
             throw UserErrors.general.userNotFound;
         }
     } catch (error) {
-        console.log(error);
+        // console.log(error);
         throw getGraphqlError(error);
     }
 }
@@ -68,11 +68,11 @@ const createUser: IFieldResolver<any, ContextAttributes, CreateUserArgs, Promise
     try {
         const existingUser = await UserService.getOneUserByAuthId(userRecord.uid);
         if (existingUser) {
-            console.log(chalk.blue(`User with auth_id ${userRecord.uid} already exists`));
+            // console.log(chalk.blue(`User with auth_id ${userRecord.uid} already exists`));
             return existingUser;
         }
     } catch (error) {
-        console.log(error);
+        // console.log(error);
         throw getGraphqlError(error);
     }
 
@@ -86,7 +86,7 @@ const createUser: IFieldResolver<any, ContextAttributes, CreateUserArgs, Promise
 
         return newUser;
     } catch (error) {
-        console.log(error);
+        // console.log(error);
         throw getGraphqlError(error);
     }
 }
@@ -100,7 +100,7 @@ const searchUsers: IFieldResolver<any, ContextAttributes, SearchUserArgs, Promis
         const searchResults = await UserService.searchUsers(searchQuery);
         return searchResults;
     } catch (error) {
-        console.log(error);
+        // console.log(error);
         throw getGraphqlError(error);
     }
 

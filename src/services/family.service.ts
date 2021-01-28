@@ -20,7 +20,7 @@ export default class FamilyService {
             const family = await Family.findById(familyId).populate('creator');
             return family;
         } catch (error) {
-            console.log(chalk.red(error));
+            // console.log(chalk.red(error));
             throw internalServerError;
         }
     }
@@ -34,7 +34,7 @@ export default class FamilyService {
             const familyResult = await newFamily.populate('creator').execPopulate();
 
             const creator = familyResult.creator as UserDoc;
-            console.log(`${creator.name} created family '${familyResult.name}'`);
+            // console.log(`${creator.name} created family '${familyResult.name}'`);
 
             return familyResult;
         } catch (error) {

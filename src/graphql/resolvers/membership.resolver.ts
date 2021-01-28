@@ -22,7 +22,7 @@ const getFamiliesOfUser: IFieldResolver<any, ContextAttributes, any, Promise<Fam
         const families = await MembershipService.getMembershipsOfAUser(user._id);
         return families;
     } catch (error) {
-        console.log(error);
+        // console.log(error);
         throw getGraphqlError(error);
     }
 }
