@@ -9,6 +9,10 @@ Familia is just like slack/discord but for families, users can create many famil
  - `TypeScript`
  - `Nodejs`
  - `Express`
+ - `Firebase-Admin (only for Authentication)`
  - `Apollo GraphQL`
  - `Socket.IO`
- - `MongoDB` 
+ - `Cloudinary (Image Storage)`
+ - `MongoDB (Database)` 
+
+### [Code for Frontend is here](https://github.com/AdityaPratap006/familia_web_app)
