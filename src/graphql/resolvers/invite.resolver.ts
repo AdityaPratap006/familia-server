@@ -128,27 +128,11 @@ const acceptInvite: IFieldResolver<any, ContextAttributes, FindInviteArgs, Promi
 }
 
 const inviteCreatedSubscription: IFieldResolver<any, SubscriptionContext, any, Promise<AsyncIterator<InviteDoc>>> = async (source, args, context) => {
-    try {
-        const { connection: { context: { authorization: authToken } } } = context;
-
-        await getVerifiedUser(authToken);
-
-        return pubsub.asyncIterator([InviteEvents.INVITE_CREATED]);
-    } catch (error) {
-        throw getGraphqlError(error);
-    }
+    return pubsub.asyncIterator([InviteEvents.INVITE_CREATED]);
 }
 
 const inviteDeletedSubscription: IFieldResolver<any, SubscriptionContext, any, Promise<AsyncIterator<InviteDoc>>> = async (source, args, context) => {
-    try {
-        const { connection: { context: { authorization: authToken } } } = context;
-
-        await getVerifiedUser(authToken);
-
-        return pubsub.asyncIterator([InviteEvents.INVITE_DELETED]);
-    } catch (error) {
-        throw getGraphqlError(error);
-    }
+    return pubsub.asyncIterator([InviteEvents.INVITE_DELETED]);
 }
 
 const inviteResolverMap: IResolvers = {
